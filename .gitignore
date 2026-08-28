@@ -4,3 +4,5 @@ out/
 lib/
 *.tsbuildinfo
 .DS_Store
+*.local.*
+*.log
