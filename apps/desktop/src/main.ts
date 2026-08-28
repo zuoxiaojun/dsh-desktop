@@ -56,7 +56,7 @@ function readDshVersion(): string | undefined {
   if (dshEntry === undefined) return undefined;
   try {
     const pkg = JSON.parse(
-      readFileSync(join(dirname(dshEntry), "../../package.json"), "utf8"),
+      readFileSync(join(dirname(dshEntry), "../package.json"), "utf8"),
     );
     return pkg.version;
   } catch {
