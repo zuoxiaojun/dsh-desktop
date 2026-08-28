@@ -1,27 +1,24 @@
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
-  appId: 'com.dsh.desktop',
-  productName: 'DSH Desktop',
+  appId: "com.dsh.desktop",
+  productName: "DSH Desktop",
   directories: {
-    app: 'apps/desktop',
-    output: 'dist',
+    app: "apps/desktop",
+    output: "dist",
   },
-  files: [
-    'lib/**',
-    'package.json',
-  ],
+  files: ["lib/**", "package.json"],
   extraResources: [],
   mac: {
-    category: 'public.app-category.developer-tools',
-    icon: 'apps/desktop/build/icon.png',
-    target: ['dir'],
+    category: "public.app-category.developer-tools",
+    icon: "apps/desktop/build/icon.svg",
+    target: ["dir"],
   },
   win: {
-    icon: 'apps/desktop/build/icon.png',
-    target: ['nsis'],
+    icon: "apps/desktop/build/icon.svg",
+    target: ["nsis"],
   },
   linux: {
-    category: 'Development',
-    target: ['dir'],
+    category: "Development",
+    target: ["dir"],
   },
-}
+};
