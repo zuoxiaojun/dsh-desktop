@@ -8,6 +8,7 @@ import { env } from "node:process";
 import {
   app,
   BrowserWindow,
+  ipcMain,
   Menu,
   nativeImage,
   session,
@@ -38,6 +39,33 @@ let host: HostSupervisor | undefined;
 let lifecycle: DesktopLifecycle | undefined;
 let bootQuitPromise: Promise<void> | undefined;
 let quitReleased = false;
+
+function readDesktopVersion(): string {
+  try {
+    const v = JSON.parse(
+      readFileSync(join(DESKTOP_DIR, "resources/version.json"), "utf8"),
+    );
+    return v.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+function readDshVersion(): string | undefined {
+  const dshEntry = resolveDshEntry();
+  if (dshEntry === undefined) return undefined;
+  try {
+    const pkg = JSON.parse(
+      readFileSync(join(dirname(dshEntry), "../../package.json"), "utf8"),
+    );
+    return pkg.version;
+  } catch {
+    return undefined;
+  }
+}
+
+const DESKTOP_VERSION = readDesktopVersion();
+const DSH_VERSION = readDshVersion();
 
 function resolveDshEntry(): string | undefined {
   // 打包后: Electron.app/Contents/Resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js
@@ -173,6 +201,26 @@ function desktopRendererUrl(origin: string): string {
   }
 }
 
+function registerIpcHandlers(): void {
+  ipcMain.handle("dsh-desktop:get-versions", () => ({
+    desktop: DESKTOP_VERSION,
+    dsh: DSH_VERSION,
+  }));
+}
+
+function injectVersionBadge(win: BrowserWindow): void {
+  const label = DSH_VERSION
+    ? `DSH Desktop v${DESKTOP_VERSION} · dsh v${DSH_VERSION}`
+    : `DSH Desktop v${DESKTOP_VERSION}`;
+  win.webContents
+    .executeJavaScript(
+      `(()=>{const e=document.createElement("div");e.id="dsh-desktop-version";e.style.cssText="position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif";e.textContent=${JSON.stringify(label)};document.body.appendChild(e)})()`,
+    )
+    .catch(() => {
+      /* ignore */
+    });
+}
+
 function hardenSession(): void {
   session.defaultSession.setPermissionCheckHandler(() => false);
   session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => {
@@ -235,7 +283,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
     return { action: "deny" };
   });
   window.webContents.on("did-finish-load", () => {
-    /* no-op */
+    injectVersionBadge(window);
   });
 
   await window.loadURL(desktopRendererUrl(origin));
@@ -302,6 +350,7 @@ async function boot(): Promise<void> {
   });
 
   hardenSession();
+  registerIpcHandlers();
 
   lifecycle = createDesktopLifecycle({
     getWindow: () => mainWindow,
