@@ -138,7 +138,7 @@ HostSupervisor
 - **SIGTERM → SIGKILL**：优雅关闭，超时后强制终止。
 - **意外退出处理**：子进程非预期退出时自动退出桌面应用。
 - **输出缓冲**：保留最多 32KB 启动输出用于诊断。
-- **spawnDshWeb**：`spawn(nodeExecutable, ["--expose-internals", dshEntry, "web", "--no-open", "--host", "127.0.0.1", "--port", "0"])`——不经 shell，Windows 无 `.cmd` 坑。
+- **spawnDshWeb**：`spawn(nodeExecutable, ["--expose-internals", dshEntry, "web", "--no-open", "--host", "127.0.0.1", "--port", "0"])`——不经 shell，Windows 无 `.cmd` 坑。**env 注入完整 PATH**（`hostPathFor`：受管 pnpm bin + node bin + `/usr/local/bin` `/opt/homebrew/bin` `/usr/bin` `/bin` `/usr/sbin` `/sbin` + 原 PATH）——打包后 .app 启动的宿主进程 PATH 只有系统最小集，而 dsh 插件 marketplace 会 `spawnSync("pnpm")`，不注入就 ENOENT。
 
 > **The Host（leading word）**：每一项任务都会碰到 Host——被监督的 `dsh web` 子进程。它绑定 `127.0.0.1:0`，就绪时打印唯一的 **readiness line**：
 >
@@ -294,6 +294,7 @@ dsh-desktop/
 - **代码签名**：未配置签名证书，macOS 会提示「无法验证开发者」，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过。
   - 注意：`electron-builder --dir` 在无证书时只给主程序做 linker-signed 的 ad-hoc 签名，**不会**生成 `Contents/_CodeSignature`。这会导致 `spctl` 报「code has no resources but signature indicates they must be present」（视为"已损坏"），删 quarantine 救不回，别的机器双击即报「app 已损坏，无法打开」。因此 `package-dmg.sh` 在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名，使 `spctl` 变为"rejected/未公证"（可被删 quarantine 绕过）；`移除安全验证.command` 也会在签名缺失/无效时自动重签。
 - **首次启动需联网**：Node 缺失时下载 Node（~50MB）+ dsh 依赖（pnpm 安装 ~60-90 秒，~270MB 解压）。离线会失败，闪屏给重试按钮。用户可手动装 Node 后重启绕过。
+- **宿主进程 PATH**：打包后 .app 启动的 Electron 主进程 PATH 只有系统最小集（`/usr/bin:/bin:/usr/sbin:/sbin`），dsh 宿主继承后其插件 marketplace `spawnSync("pnpm")` 会 ENOENT。修复：spawn dsh 时注入 `hostPathFor` 构造的完整 PATH（受管 pnpm bin 优先 + node bin + 系统常见路径 + 原 PATH），实测最小 PATH 环境下 `pnpm --version` 可正常解析。
 - **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新。
 - **版本角标**：`injectVersionBadge`（`main.ts`）改用 `document.createTextNode` 构建（避开 innerHTML），并在注入前把版本号用 `JSON.stringify` 序列化；保留 MutationObserver 自愈（SPA 导航移除后自动重渲染）与 `DSH_VERSION` 为空时只显示桌面版本一行。`DSH_VERSION` 为**运行时**读取受管 dsh 的 package.json（构建时不可知），在 host 就绪后设置。
 - **受管 Node 校验和**：`node-versions.json` 的 checksums 为空时，受管安装会直接报「no SHA256 checksum」——发布前必须从 SHASUMS256.txt 填入，防止静默安装损坏/被篡改的二进制。

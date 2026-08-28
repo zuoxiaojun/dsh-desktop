@@ -1,6 +1,6 @@
 /** Electron application shell for the loopback DSH Desktop Web Host. */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "node:process";
@@ -23,9 +23,9 @@ import {
 } from "./host-supervisor.ts";
 import {
   ensureManagedDsh,
+  hostPathFor,
   readManagedDshVersion,
   resolveNode,
-  type NodeInfo,
   type NodeProgress,
   type NodeVersionsConfig,
 } from "./node-manager.ts";
@@ -53,7 +53,6 @@ let bootQuitPromise: Promise<void> | undefined;
 let quitReleased = false;
 let bootWindow: BootWindow | undefined;
 let abortController: AbortController | undefined;
-let nodeInfo: NodeInfo | undefined;
 let ipcRegistered = false;
 
 function readDesktopVersion(): string {
@@ -291,7 +290,6 @@ async function boot(): Promise<void> {
     onProgress,
     signal,
   });
-  nodeInfo = node;
 
   // 阶段二：受管安装 dsh（首次联网拉取，走国内镜像）
   const dshEntry = await ensureManagedDsh({
@@ -302,13 +300,31 @@ async function boot(): Promise<void> {
   });
 
   // 阶段三：Host 监督模型启动 dsh web
+  // 打包后 .app 的 PATH 只有系统最小集，dsh 插件 marketplace 会 spawnSync("pnpm")——
+  // 注入完整 PATH（受管 pnpm bin + node bin + 系统路径 + 原 PATH）
+  const pnpmBin = join(
+    userDataDir,
+    "tools",
+    "pnpm",
+    "node_modules",
+    ".bin",
+  );
   host = createHostSupervisor({
     spawnHost: () =>
       spawnDshWeb({
         nodeExecutable: node.executable,
         dshEntry,
         cwd: env.HOME || process.cwd(),
-        env: { ...env, DSH_DESKTOP: "1" },
+        env: {
+          ...env,
+          DSH_DESKTOP: "1",
+          PATH: hostPathFor(
+            node,
+            existsSync(pnpmBin) ? pnpmBin : undefined,
+            process.platform as NodeJS.Platform,
+            { PATH: env.PATH },
+          ),
+        },
       }),
     log: (chunk) => process.stderr.write(chunk),
     onUnexpectedExit: ({ code, signal: sig }) => {

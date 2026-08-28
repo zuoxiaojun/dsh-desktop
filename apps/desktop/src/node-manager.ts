@@ -201,6 +201,35 @@ function appendVersionedNodeDirs(
   for (const version of versions) list.push(toBin(join(root, version)));
 }
 
+/** 构造 dsh 宿主进程的 PATH：受管 pnpm bin + node bin + 系统常见路径 + 原 PATH。
+ * 打包后的 .app 启动时 PATH 只有系统最小集，dsh 的插件 marketplace 会
+ * spawnSync("pnpm")，找不到就 ENOENT；此处注入后 `pnpm`/`node` 均可解析。 */
+export function hostPathFor(
+  node: NodeInfo,
+  pnpmBinDir: string | undefined,
+  platform: NodeJS.Platform,
+  envLike: { PATH?: string },
+): string {
+  const separator = platform === "win32" ? ";" : ":";
+  const parts: string[] = [];
+  if (pnpmBinDir !== undefined && pnpmBinDir !== "") parts.push(pnpmBinDir);
+  parts.push(dirname(node.executable));
+  if (platform !== "win32") {
+    parts.push(
+      "/usr/local/bin",
+      "/opt/homebrew/bin",
+      "/usr/bin",
+      "/bin",
+      "/usr/sbin",
+      "/sbin",
+    );
+  }
+  if (envLike.PATH !== undefined && envLike.PATH !== "") {
+    parts.push(envLike.PATH);
+  }
+  return parts.join(separator);
+}
+
 export async function runNodeVersion(
   nodeExecutable: string,
 ): Promise<string | undefined> {
