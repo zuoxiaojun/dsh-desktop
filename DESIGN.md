@@ -283,3 +283,4 @@ pnpm run dist:all              # 全平台
 
 - **代码签名**：未配置签名证书，macOS 会提示"无法验证开发者"，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过
 - **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新
+- **版本号两行显示失效**：右下角版本号注入 `executeJavaScript` 时，模板字符串 `${DESKTOP_VERSION}` / `${DSH_VERSION}` 在主进程作用域内被求值，但执行后的 DOM 中 `createTextNode` 收到的是纯文本变量名而非实际值，导致第二行 `dsh v${DSH_VERSION}` 显示为字面文本。注入方式反复尝试（preload 直接操作 DOM、MutationObserver 自愈、did-finish-load 重发）均未触及根本原因，属于模板字符串嵌套层级错误。修复方案：在 `executeJavaScript` 调用前将值序列化为普通字符串拼接，避免模板字符串嵌套
