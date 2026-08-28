@@ -31,7 +31,7 @@ module.exports = {
   ),
   mac: {
     category: "public.app-category.developer-tools",
-    icon: "build/icon.icns",
+    icon: "apps/desktop/build/icon.icns",
     target: [
       { target: "dmg", arch: "arm64" },
       { target: "dmg", arch: "x64" },
@@ -40,7 +40,7 @@ module.exports = {
   dmg: {
     title: "DSH Desktop ${version}",
     artifactName: "${productName}-${version}-${arch}.${ext}",
-    icon: "build/icon.icns",
+    icon: "apps/desktop/build/icon.icns",
     background: undefined,
     contents: [
       { x: 130, y: 220, type: "file" },
