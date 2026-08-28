@@ -9,12 +9,14 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
 } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { get as httpGet } from "node:http";
 import { get as httpsGet } from "node:https";
+import { env } from "node:process";
 import { dirname, join, win32 } from "node:path";
 
 const VERSION_RE = /^v(\d+)\.(\d+)\.(\d+)$/u;
@@ -138,7 +140,64 @@ export async function locateNodeExecutable(
     false,
   );
   const first = raw?.split(/\r?\n/u).find((line) => line.trim() !== "");
-  return first?.trim();
+  if (first !== undefined && first.trim() !== "") return first.trim();
+  // macOS GUI 应用（双击 .app）不继承 shell 的 PATH，这里扫描常见安装位置兜底
+  const homeDir = env.HOME ?? "";
+  for (const candidate of nodeCandidates(platform, homeDir)) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+/** 常见 node 安装位置（PATH 之外），按平台返回；nvm/fnm 版本目录按版本号降序。 */
+export function nodeCandidates(
+  platform: NodeJS.Platform,
+  homeDir: string,
+): string[] {
+  if (platform === "win32") {
+    const programFiles = env.ProgramFiles ?? "C:\\Program Files";
+    const localAppData =
+      env.LOCALAPPDATA ?? win32.join(homeDir, "AppData", "Local");
+    return [
+      win32.join(programFiles, "nodejs", "node.exe"),
+      win32.join(localAppData, "Programs", "nodejs", "node.exe"),
+      win32.join(homeDir, ".volta", "bin", "node.exe"),
+    ];
+  }
+
+  const candidates: string[] = [];
+  appendVersionedNodeDirs(
+    candidates,
+    join(homeDir, ".nvm", "versions", "node"),
+    (dir) => join(dir, "bin", "node"),
+  );
+  appendVersionedNodeDirs(
+    candidates,
+    join(homeDir, ".fnm", "node-versions"),
+    (dir) => join(dir, "installation", "bin", "node"),
+  );
+  candidates.push(
+    join(homeDir, ".volta", "bin", "node"),
+    "/opt/homebrew/bin/node",
+    "/usr/local/bin/node",
+    "/usr/bin/node",
+  );
+  return candidates;
+}
+
+function appendVersionedNodeDirs(
+  list: string[],
+  root: string,
+  toBin: (versionDir: string) => string,
+): void {
+  let versions: string[];
+  try {
+    versions = readdirSync(root).filter((name) => name.startsWith("v"));
+  } catch {
+    return;
+  }
+  versions.sort((a, b) => (nodeMajor(b) ?? 0) - (nodeMajor(a) ?? 0));
+  for (const version of versions) list.push(toBin(join(root, version)));
 }
 
 export async function runNodeVersion(
