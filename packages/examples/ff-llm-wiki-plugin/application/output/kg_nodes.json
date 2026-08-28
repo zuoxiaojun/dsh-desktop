@@ -1,0 +1,762 @@
+[
+  {
+    "id": "node_0",
+    "name": "接口安全与鉴权",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-api-security.md",
+    "char_start": 177,
+    "char_end": 186,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_1",
+    "name": "变更评审流程",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-change-review.md",
+    "char_start": 205,
+    "char_end": 213,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_2",
+    "name": "持续集成与发布系统",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-cicd-system.md",
+    "char_start": 177,
+    "char_end": 188,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_3",
+    "name": "网关服务架构",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-gateway-architecture.md",
+    "char_start": 192,
+    "char_end": 200,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_4",
+    "name": "可观测性设计",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-observability.md",
+    "char_start": 183,
+    "char_end": 191,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_5",
+    "name": "订单中心接口规范",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-order-api.md",
+    "char_start": 183,
+    "char_end": 193,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_6",
+    "name": "发布流程与代码评审",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-release-flow.md",
+    "char_start": 180,
+    "char_end": 191,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_7",
+    "name": "技术债治理策略",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-tech-debt-policy.md",
+    "char_start": 187,
+    "char_end": 196,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_8",
+    "name": "版本与兼容性策略",
+    "type": "PAGE",
+    "source_doc": "wiki/engineering-versioning-policy.md",
+    "char_start": 186,
+    "char_end": 196,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_9",
+    "name": "考勤与休假制度",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-attendance-policy.md",
+    "char_start": 154,
+    "char_end": 163,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_10",
+    "name": "企业文化与价值观",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-culture-concept.md",
+    "char_start": 151,
+    "char_end": 161,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_11",
+    "name": "员工入职流程",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-onboarding-flow.md",
+    "char_start": 154,
+    "char_end": 162,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_12",
+    "name": "绩效管理体系",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-performance-system.md",
+    "char_start": 152,
+    "char_end": 160,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_13",
+    "name": "晋升评审策略",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-promotion-policy.md",
+    "char_start": 150,
+    "char_end": 158,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_14",
+    "name": "招聘与人才标准",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-recruitment-concept.md",
+    "char_start": 155,
+    "char_end": 164,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_15",
+    "name": "培训体系",
+    "type": "PAGE",
+    "source_doc": "wiki/hr-training-system.md",
+    "char_start": 146,
+    "char_end": 152,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_16",
+    "name": "备份与恢复演练",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-backup-recovery.md",
+    "char_start": 181,
+    "char_end": 190,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_17",
+    "name": "容量规划",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-capacity-planning.md",
+    "char_start": 180,
+    "char_end": 186,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_18",
+    "name": "变更管理流程",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-change-management.md",
+    "char_start": 180,
+    "char_end": 188,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_19",
+    "name": "变更窗口与冻结期",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-change-window.md",
+    "char_start": 168,
+    "char_end": 178,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_20",
+    "name": "故障复盘方法",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-incident-review.md",
+    "char_start": 176,
+    "char_end": 184,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_21",
+    "name": "服务器巡检规范",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-inspection-routine.md",
+    "char_start": 185,
+    "char_end": 194,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_22",
+    "name": "监控告警体系",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-monitoring-alerting.md",
+    "char_start": 183,
+    "char_end": 191,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_23",
+    "name": "值班与响应策略",
+    "type": "PAGE",
+    "source_doc": "wiki/operations-oncall-policy.md",
+    "char_start": 174,
+    "char_end": 183,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_24",
+    "name": "产品验收流程",
+    "type": "PAGE",
+    "source_doc": "wiki/product-acceptance-playbook.md",
+    "char_start": 193,
+    "char_end": 201,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_25",
+    "name": "需求优先级与排期策略",
+    "type": "PAGE",
+    "source_doc": "wiki/product-backlog-policy.md",
+    "char_start": 163,
+    "char_end": 175,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_26",
+    "name": "产品反馈闭环",
+    "type": "PAGE",
+    "source_doc": "wiki/product-feedback-loop.md",
+    "char_start": 190,
+    "char_end": 198,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_27",
+    "name": "产品生命周期管理",
+    "type": "PAGE",
+    "source_doc": "wiki/product-lifecycle.md",
+    "char_start": 157,
+    "char_end": 167,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_28",
+    "name": "需求规格与验收标准",
+    "type": "PAGE",
+    "source_doc": "wiki/product-requirements.md",
+    "char_start": 160,
+    "char_end": 171,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_29",
+    "name": "路线图与迭代规划",
+    "type": "PAGE",
+    "source_doc": "wiki/product-roadmap-planning.md",
+    "char_start": 164,
+    "char_end": 174,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_30",
+    "name": "产品承诺与服务水平对齐",
+    "type": "PAGE",
+    "source_doc": "wiki/product-sla-alignment.md",
+    "char_start": 163,
+    "char_end": 176,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_31",
+    "name": "用户操作手册体系",
+    "type": "PAGE",
+    "source_doc": "wiki/product-user-manual-system.md",
+    "char_start": 167,
+    "char_end": 177,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_32",
+    "name": "访问控制与权限策略",
+    "type": "PAGE",
+    "source_doc": "wiki/security-access-control.md",
+    "char_start": 168,
+    "char_end": 179,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_33",
+    "name": "合规与审计",
+    "type": "PAGE",
+    "source_doc": "wiki/security-compliance-audit.md",
+    "char_start": 167,
+    "char_end": 174,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_34",
+    "name": "数据保留与销毁策略",
+    "type": "PAGE",
+    "source_doc": "wiki/security-data-retention.md",
+    "char_start": 170,
+    "char_end": 181,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_35",
+    "name": "数据泄露应急响应",
+    "type": "PAGE",
+    "source_doc": "wiki/security-incident-response.md",
+    "char_start": 174,
+    "char_end": 184,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_36",
+    "name": "信息分级与保护",
+    "type": "PAGE",
+    "source_doc": "wiki/security-info-classification.md",
+    "char_start": 172,
+    "char_end": 181,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_37",
+    "name": "最小权限原则",
+    "type": "PAGE",
+    "source_doc": "wiki/security-least-privilege.md",
+    "char_start": 172,
+    "char_end": 180,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_38",
+    "name": "安全监控与告警",
+    "type": "PAGE",
+    "source_doc": "wiki/security-monitoring.md",
+    "char_start": 167,
+    "char_end": 176,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_39",
+    "name": "安全培训与意识",
+    "type": "PAGE",
+    "source_doc": "wiki/security-training-awareness.md",
+    "char_start": 168,
+    "char_end": 177,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_40",
+    "name": "投诉升级标准",
+    "type": "PAGE",
+    "source_doc": "wiki/support-complaint-escalation.md",
+    "char_start": 169,
+    "char_end": 177,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_41",
+    "name": "跨部门协作处置",
+    "type": "PAGE",
+    "source_doc": "wiki/support-cross-dept-collab.md",
+    "char_start": 201,
+    "char_end": 210,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_42",
+    "name": "首次响应时限策略",
+    "type": "PAGE",
+    "source_doc": "wiki/support-first-response-policy.md",
+    "char_start": 167,
+    "char_end": 177,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_43",
+    "name": "满意度度量体系",
+    "type": "PAGE",
+    "source_doc": "wiki/support-satisfaction-metric.md",
+    "char_start": 168,
+    "char_end": 177,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_44",
+    "name": "客服话术知识库",
+    "type": "PAGE",
+    "source_doc": "wiki/support-script-system.md",
+    "char_start": 161,
+    "char_end": 170,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_45",
+    "name": "服务等级协议",
+    "type": "PAGE",
+    "source_doc": "wiki/support-sla.md",
+    "char_start": 147,
+    "char_end": 155,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_46",
+    "name": "工单处理流程",
+    "type": "PAGE",
+    "source_doc": "wiki/support-ticket-flow.md",
+    "char_start": 163,
+    "char_end": 171,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_47",
+    "name": "系统架构设计说明书（网关服务）",
+    "type": "SOURCE",
+    "source_doc": "raw/engineering-gateway-arch.md",
+    "char_start": 64,
+    "char_end": 81,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_48",
+    "name": "接口文档（订单中心 v1.8）",
+    "type": "SOURCE",
+    "source_doc": "raw/engineering-order-api.md",
+    "char_start": 64,
+    "char_end": 81,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_49",
+    "name": "发布与代码评审规范",
+    "type": "SOURCE",
+    "source_doc": "raw/engineering-release.md",
+    "char_start": 64,
+    "char_end": 75,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_50",
+    "name": "员工入职指引手册",
+    "type": "SOURCE",
+    "source_doc": "raw/hr-onboarding.md",
+    "char_start": 57,
+    "char_end": 67,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_51",
+    "name": "绩效考核管理办法（2025）",
+    "type": "SOURCE",
+    "source_doc": "raw/hr-performance.md",
+    "char_start": 57,
+    "char_end": 73,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_52",
+    "name": "培训课程与晋升评审",
+    "type": "SOURCE",
+    "source_doc": "raw/hr-training.md",
+    "char_start": 57,
+    "char_end": 68,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_53",
+    "name": "生产环境变更管理规范",
+    "type": "SOURCE",
+    "source_doc": "raw/operations-change.md",
+    "char_start": 63,
+    "char_end": 75,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_54",
+    "name": "服务器巡检手册（每周点检）",
+    "type": "SOURCE",
+    "source_doc": "raw/operations-inspection.md",
+    "char_start": 63,
+    "char_end": 78,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_55",
+    "name": "监控告警与故障复盘",
+    "type": "SOURCE",
+    "source_doc": "raw/operations-monitor.md",
+    "char_start": 63,
+    "char_end": 74,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_56",
+    "name": "用户操作手册（v2.3）",
+    "type": "SOURCE",
+    "source_doc": "raw/product-manual.md",
+    "char_start": 60,
+    "char_end": 74,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_57",
+    "name": "产品需求说明书（2025 Q3）",
+    "type": "SOURCE",
+    "source_doc": "raw/product-prd.md",
+    "char_start": 60,
+    "char_end": 78,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_58",
+    "name": "产品路线图（2025）",
+    "type": "SOURCE",
+    "source_doc": "raw/product-roadmap.md",
+    "char_start": 60,
+    "char_end": 73,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_59",
+    "name": "权限与合规管理",
+    "type": "SOURCE",
+    "source_doc": "raw/security-access.md",
+    "char_start": 61,
+    "char_end": 70,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_60",
+    "name": "数据泄露应急预案",
+    "type": "SOURCE",
+    "source_doc": "raw/security-incident.md",
+    "char_start": 61,
+    "char_end": 71,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_61",
+    "name": "信息安全管理制度（2025 版）",
+    "type": "SOURCE",
+    "source_doc": "raw/security-policy.md",
+    "char_start": 61,
+    "char_end": 79,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_62",
+    "name": "投诉处理流程与升级标准",
+    "type": "SOURCE",
+    "source_doc": "raw/support-complaint.md",
+    "char_start": 60,
+    "char_end": 73,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_63",
+    "name": "客服话术手册（常见问题处理）",
+    "type": "SOURCE",
+    "source_doc": "raw/support-script.md",
+    "char_start": 60,
+    "char_end": 76,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_64",
+    "name": "服务 SLA 与满意度说明",
+    "type": "SOURCE",
+    "source_doc": "raw/support-sla.md",
+    "char_start": 60,
+    "char_end": 75,
+    "confidence": "match_exact",
+    "page": 0
+  },
+  {
+    "id": "node_65",
+    "name": "engineering",
+    "type": "TOPIC",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 575,
+    "char_end": 597,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "研发"
+  },
+  {
+    "id": "node_66",
+    "name": "hr",
+    "type": "TOPIC",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 1065,
+    "char_end": 1078,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "人力"
+  },
+  {
+    "id": "node_67",
+    "name": "operations",
+    "type": "TOPIC",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 1524,
+    "char_end": 1545,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "运维"
+  },
+  {
+    "id": "node_68",
+    "name": "product",
+    "type": "TOPIC",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 2013,
+    "char_end": 2031,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "产品"
+  },
+  {
+    "id": "node_69",
+    "name": "security",
+    "type": "TOPIC",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 2481,
+    "char_end": 2500,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "安全"
+  },
+  {
+    "id": "node_70",
+    "name": "support",
+    "type": "TOPIC",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 2961,
+    "char_end": 2979,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "客服"
+  },
+  {
+    "id": "node_71",
+    "name": "concept",
+    "type": "PAGE_TYPE",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 250,
+    "char_end": 267,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "概念"
+  },
+  {
+    "id": "node_72",
+    "name": "system",
+    "type": "PAGE_TYPE",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 306,
+    "char_end": 322,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "系统"
+  },
+  {
+    "id": "node_73",
+    "name": "playbook",
+    "type": "PAGE_TYPE",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 361,
+    "char_end": 379,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "手册"
+  },
+  {
+    "id": "node_74",
+    "name": "policy",
+    "type": "PAGE_TYPE",
+    "source_doc": "wiki/manifest.json",
+    "char_start": 418,
+    "char_end": 434,
+    "confidence": "match_exact",
+    "page": 0,
+    "label": "策略"
+  }
+]

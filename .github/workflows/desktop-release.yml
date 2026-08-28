@@ -1,0 +1,293 @@
+# Build signed desktop installers from one immutable tag, verify them on their
+# native platforms, and publish a GitHub Release only after both jobs pass.
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - desktop-v*
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing desktop-v* tag whose version matches apps/desktop/package.json.
+        required: true
+        type: string
+      prerelease:
+        description: Publish the GitHub Release as a prerelease.
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  PRIMARY_NODE_VERSION: '24'
+  DSH_TELEMETRY_DISABLED: '1'
+
+jobs:
+  prepare:
+    name: Validate release tag
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Match tag, package version, and checked-out commit
+        id: release
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          RELEASE_EVENT: ${{ github.event_name }}
+          MANUAL_PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./apps/desktop/package.json').version")
+          expected_tag="desktop-v${version}"
+          if [[ "$REQUESTED_TAG" != "$expected_tag" ]]; then
+            echo "Release tag must be ${expected_tag}; received ${REQUESTED_TAG}." >&2
+            exit 1
+          fi
+          tag_commit=$(git rev-list -n 1 "$REQUESTED_TAG")
+          checkout_commit=$(git rev-parse HEAD)
+          if [[ "$tag_commit" != "$checkout_commit" ]]; then
+            echo "Checked-out commit does not match ${REQUESTED_TAG}." >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_EVENT" == workflow_dispatch ]]; then
+            prerelease="$MANUAL_PRERELEASE"
+          elif [[ "$version" == *-* ]]; then
+            prerelease=true
+          else
+            prerelease=false
+          fi
+          echo "tag=$REQUESTED_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+  macos:
+    name: macOS arm64 DMG and ZIP
+    needs: prepare
+    runs-on: macos-latest
+    environment: desktop-release
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          dest: ${{ runner.temp }}/setup-pnpm
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build signed and notarized arm64 release
+        shell: bash
+        env:
+          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          for name in MAC_CERT_P12_BASE64 MACOS_SIGN_IDENTITY CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "desktop-release is missing ${name}." >&2
+              exit 1
+            fi
+          done
+          pnpm --filter @deepseek-ai/dsh-desktop run dist:mac -- --arm64
+
+      - name: Verify DMG signature, Gatekeeper, and notarization ticket
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg_count=$(find apps/desktop/dist -maxdepth 1 -type f -name '*.dmg' | wc -l | tr -d ' ')
+          if [[ "$dmg_count" -ne 1 ]]; then
+            echo "Expected exactly one DMG; found ${dmg_count}." >&2
+            exit 1
+          fi
+          dmg_path=$(find apps/desktop/dist -maxdepth 1 -type f -name '*.dmg' -print -quit)
+          mount_point=$(mktemp -d)
+          mounted=false
+          cleanup() {
+            if [[ "$mounted" == true ]]; then hdiutil detach "$mount_point"; fi
+            rmdir "$mount_point"
+          }
+          trap cleanup EXIT
+          hdiutil attach "$dmg_path" -mountpoint "$mount_point" -nobrowse -readonly
+          mounted=true
+          app_path="$mount_point/DeepSeek Harness.app"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          spctl --assess --type execute --verbose=4 "$app_path"
+          xcrun stapler validate "$app_path"
+
+      - name: Upload macOS release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos-arm64
+          path: |
+            apps/desktop/dist/*.dmg
+            apps/desktop/dist/*.dmg.blockmap
+            apps/desktop/dist/*.zip
+            apps/desktop/dist/*.zip.blockmap
+            apps/desktop/dist/*-mac.yml
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    name: Windows x64 installer
+    needs: prepare
+    runs-on: windows-2025
+    environment: desktop-release
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          dest: ${{ runner.temp }}\setup-pnpm
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        shell: pwsh
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Authenticode-signed x64 installer
+        shell: pwsh
+        env:
+          WIN_CERT_P12_BASE64: ${{ secrets.WIN_CERT_P12_BASE64 }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WIN_CERT_P12_BASE64)) {
+            throw 'desktop-release is missing WIN_CERT_P12_BASE64.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) {
+            throw 'desktop-release is missing WIN_CSC_KEY_PASSWORD.'
+          }
+          $certificate = $env:WIN_CERT_P12_BASE64 -replace '\s', ''
+          $env:CSC_LINK = "data:application/x-pkcs12;base64,$certificate"
+          $env:CSC_KEY_PASSWORD = $env:WIN_CSC_KEY_PASSWORD
+          $env:DSH_DESKTOP_TARGET_PLATFORM = 'win32'
+          $env:DSH_DESKTOP_TARGET_ARCH = 'x64'
+          pnpm run build
+          pnpm --dir apps/desktop exec node --import tsx scripts/stage-runtime.ts
+          pnpm --dir apps/desktop exec node --import tsx scripts/release-win.ts
+
+      - name: Verify installer Authenticode signature
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem apps/desktop/dist -File -Filter '*Setup.exe')
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one Windows installer; found $($installers.Count)."
+          }
+          $signature = Get-AuthenticodeSignature $installers[0].FullName
+          if ($signature.Status -ne 'Valid') {
+            throw "Installer Authenticode status is $($signature.Status)."
+          }
+
+      - name: Upload Windows release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-x64
+          path: |
+            apps/desktop/dist/*Setup.exe
+            apps/desktop/dist/*Setup.exe.blockmap
+            apps/desktop/dist/*.yml
+            !apps/desktop/dist/builder-*.yml
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    needs: [prepare, macos, windows]
+    runs-on: ubuntu-24.04
+    environment: desktop-release
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Validate assets and generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          for extension in dmg zip exe; do
+            count=$(find release-assets -type f -name "*.${extension}" | wc -l | tr -d ' ')
+            if [[ "$count" -ne 1 ]]; then
+              echo "Expected exactly one .${extension} asset; found ${count}." >&2
+              exit 1
+            fi
+          done
+          find release-assets -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            | sed 's#  release-assets/#  #' \
+            > release-assets/SHA256SUMS
+
+      - name: Create complete draft and publish it
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; refusing to replace assets." >&2
+            exit 1
+          fi
+          cat > release-notes.md <<EOF
+          DeepSeek Harness Studio ${RELEASE_VERSION}
+
+          - macOS Apple Silicon: signed and notarized DMG
+          - Windows x64: Authenticode-signed NSIS installer
+          - SHA256SUMS: checksums for every published asset
+          EOF
+          mapfile -d '' assets < <(find release-assets -type f -print0 | sort -z)
+          arguments=(
+            "$RELEASE_TAG"
+            "${assets[@]}"
+            --repo "$GITHUB_REPOSITORY"
+            --verify-tag
+            --draft
+            --title "DeepSeek Harness Studio ${RELEASE_VERSION}"
+            --notes-file release-notes.md
+          )
+          if [[ "$RELEASE_PRERELEASE" == true ]]; then arguments+=(--prerelease); fi
+          gh release create "${arguments[@]}"
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false

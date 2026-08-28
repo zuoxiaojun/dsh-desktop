@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-17-desktop-preset-square-installation.md
+2026-08-17-desktop-preset-square-installation.md: 319fe02c3c82a9a1dd26f0a19e8c76ba76bf7a20
+2026-08-17-desktop-preset-square-installation.zh.md: 92a7f3752ebd839deef8258354ac3eead75ed0d7

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "mode": "local-rule-extraction",
+  "generatedAt": "2026-08-17T08:50:07.347Z",
+  "extractedBy": "llmwiki/graph:extract",
+  "sourceManifest": "content/wiki/manifest.json",
+  "sourceManifestCompiledAt": "2026-08-17T08:50:07.402Z"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@llmwiki/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LLM Wiki Fastify API 服务",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "wiki:compile": "tsx src/wiki/cli.ts",
+    "graph:extract": "tsx src/graph/cli.ts",
+    "eval:base": "tsx src/eval/cli.ts base",
+    "eval:after": "tsx src/eval/cli.ts after",
+    "eval:contract": "tsx src/eval/check-contract.ts",
+    "eval:repro": "tsx src/eval/check-reproducibility.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/multipart": "^10.1.1",
+    "@llmwiki/contracts": "workspace:*",
+    "better-sqlite3": "^13.0.3",
+    "fastify": "^5.12.0",
+    "mammoth": "^1.12.1",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.13.3",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-08-17-desktop-plugin-uninstall-continuity.md
+2026-08-17-desktop-plugin-uninstall-continuity.md: 5ee8f9f9f10f1838830af88fd65e855008af8566
+2026-08-17-desktop-plugin-uninstall-continuity.zh.md: 0ab5ddc3564669a662f1e61c6ef77fea23e7039b

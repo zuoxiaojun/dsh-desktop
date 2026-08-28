@@ -1,0 +1,3 @@
+- insert:
+    - id: fufan.llm-wiki
+      name: '@fufan/dsh-plugin-llm-wiki'
