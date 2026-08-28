@@ -1,3 +1,5 @@
 allowBuilds:
-  electron-winstaller: set this to true or false
-  esbuild: true
+  electron-winstaller: false
+  esbuild: false
+onlyBuiltDependencies:
+  - esbuild
