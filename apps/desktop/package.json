@@ -69,13 +69,7 @@
         "to": "host/node_modules"
       }
     ],
-    "publish": [
-      {
-        "provider": "generic",
-        "url": "https://ml2022.oss-cn-hangzhou.aliyuncs.com/deepseek-harness-desktop/releases",
-        "channel": "rc"
-      }
-    ],
+    "publish": [],
     "toolsets": {
       "nsis": "1.2.1"
     },
