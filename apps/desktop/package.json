@@ -4,5 +4,8 @@
   "private": true,
   "description": "DSH Desktop - Electron client for DeepSeek Harness",
   "main": "lib/main.mjs",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.1-rc.2"
+  }
 }

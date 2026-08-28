@@ -1,6 +1,6 @@
 /** Electron application shell for the loopback DSH Desktop Web Host. */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
@@ -39,27 +39,80 @@ let lifecycle: DesktopLifecycle | undefined;
 let bootQuitPromise: Promise<void> | undefined;
 let quitReleased = false;
 
+function resolveDshEntry(): string | undefined {
+  // 打包后: Electron.app/Contents/Resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js
+  // 开发时: apps/desktop/resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js
+  const candidates = [
+    // 生产环境 (process.resourcesPath 在打包后指向 app.asar 解压目录)
+    ...(process.resourcesPath
+      ? [
+          join(
+            process.resourcesPath,
+            "dsh/node_modules/@deepseek-ai/dsh/lib/bin.js",
+          ),
+        ]
+      : []),
+    // 开发环境
+    join(DESKTOP_DIR, "resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js"),
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
+  }
+  return undefined;
+}
+
 function spawnDshWeb(): HostChild {
-  const dshCommand = process.env.DSH_CLI ?? "npx";
-  const dshArgs = process.env.DSH_CLI
-    ? ["web", "--no-open", "--host", "127.0.0.1", "--port", "0"]
-    : [
-        "@deepseek-ai/dsh",
+  // 优先使用 Electron 自带的 Node.js 运行捆绑的 dsh
+  const dshEntry = resolveDshEntry();
+
+  if (dshEntry !== undefined) {
+    const child = spawn(
+      process.execPath,
+      [
+        "--expose-internals",
+        dshEntry,
         "web",
         "--no-open",
         "--host",
         "127.0.0.1",
         "--port",
         "0",
-      ];
+      ],
+      {
+        cwd: env.HOME || process.cwd(),
+        env: { ...env, DSH_DESKTOP: "1", ELECTRON_RUN_AS_NODE: "1" },
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+      },
+    );
+    return adaptChild(child);
+  }
 
-  const child = spawn(dshCommand, dshArgs, {
-    cwd: env.HOME || process.cwd(),
-    env: { ...env, DSH_DESKTOP: "1" },
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  // 兜底：通过 npx 运行（用户需自行安装 Node.js + dsh）
+  const child = spawn(
+    "npx",
+    [
+      "@deepseek-ai/dsh",
+      "web",
+      "--no-open",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "0",
+    ],
+    {
+      cwd: env.HOME || process.cwd(),
+      env: { ...env, DSH_DESKTOP: "1" },
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
+  return adaptChild(child);
+}
 
+function adaptChild(
+  child: import("node:child_process").ChildProcess,
+): HostChild {
   return {
     pid: child.pid ?? undefined,
     stdout: {
