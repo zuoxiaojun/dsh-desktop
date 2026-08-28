@@ -12,6 +12,7 @@ import {
   readdirSync,
   renameSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { get as httpGet } from "node:http";
@@ -257,6 +258,33 @@ export function readManagedDshVersion(userDataDir: string): string | undefined {
   }
 }
 
+export interface PnpmProgress {
+  resolved: number;
+  downloaded: number;
+  added: number;
+}
+
+/** 解析 pnpm 的 Progress 行，如 "Progress: resolved 193, reused 60, downloaded 133, added 193, done in 45s"。 */
+export function parsePnpmProgress(line: string): PnpmProgress | undefined {
+  const match =
+    /^Progress: resolved (\d+), reused \d+, downloaded (\d+), added (\d+)/u.exec(
+      line.trim(),
+    );
+  if (match === null) return undefined;
+  return {
+    resolved: Number(match[1]),
+    downloaded: Number(match[2]),
+    added: Number(match[3]),
+  };
+}
+
+/** 由解析出的数字生成面向用户的安装进度文案；无可用信息返回 undefined。 */
+export function parseInstallDetail(p: PnpmProgress): string | undefined {
+  if (p.added > 0 && p.resolved > 0) return `依赖处理 ${p.added}/${p.resolved}`;
+  if (p.downloaded > 0) return `下载依赖 ${p.downloaded} 个…`;
+  return undefined;
+}
+
 export async function extractArchive(
   archivePath: string,
   destDir: string,
@@ -395,6 +423,65 @@ export async function installManagedNode(options: {
   }
 }
 
+export function managedPnpmCli(userDataDir: string): string {
+  return join(
+    userDataDir,
+    "tools",
+    "pnpm",
+    "node_modules",
+    "pnpm",
+    "bin",
+    "pnpm.cjs",
+  );
+}
+
+/** 一次性安装 pnpm（走国内镜像，npm 装无依赖的 pnpm 很快）；已存在则复用。 */
+async function ensurePnpm(
+  node: NodeInfo,
+  userDataDir: string,
+  env: Record<string, string | undefined>,
+  onProgress?: (p: NodeProgress) => void,
+): Promise<string> {
+  const pnpmCli = managedPnpmCli(userDataDir);
+  if (existsSync(pnpmCli)) return pnpmCli;
+  onProgress?.({ stage: "installing-dsh", detail: "准备安装器（pnpm）…" });
+  const status = await new Promise<number | null>((resolve) => {
+    const child = spawn(
+      node.executable,
+      [
+        node.npmCli,
+        "install",
+        "--prefix",
+        join(userDataDir, "tools", "pnpm"),
+        "pnpm",
+      ],
+      { env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
+    );
+    child.stderr?.on("data", (c: Buffer) => process.stderr.write(c));
+    child.on("error", () => resolve(null));
+    child.on("close", (code) => resolve(code));
+  });
+  if (status !== 0 || !existsSync(pnpmCli)) {
+    throw new Error("pnpm bootstrap failed (network or registry issue)");
+  }
+  return pnpmCli;
+}
+
+/** 转发并解析 pnpm 输出，提取安装进度更新闪屏。 */
+function handlePnpmOutput(
+  text: string,
+  onProgress?: (p: NodeProgress) => void,
+): void {
+  for (const line of text.split(/\r?\n|\r/u)) {
+    const progress = parsePnpmProgress(line);
+    if (progress === undefined) continue;
+    const detail = parseInstallDetail(progress);
+    if (detail !== undefined) {
+      onProgress?.({ stage: "installing-dsh", detail });
+    }
+  }
+}
+
 export async function ensureManagedDsh(options: {
   node: NodeInfo;
   userDataDir: string;
@@ -411,23 +498,52 @@ export async function ensureManagedDsh(options: {
   env.npm_config_registry = "https://registry.npmmirror.com";
   env.npm_config_cache = join(userDataDir, "npm-cache");
   if (signal?.aborted) throw new Error("install aborted");
+
+  // 1. 确保 pnpm（提速：硬链接 store 比 npm 扁平安装快数倍）
+  const pnpmCli = await ensurePnpm(node, userDataDir, env, onProgress);
+
+  // 2. 预写 dsh 目录 package.json，用 pnpm 安装
+  const dshDir = join(userDataDir, "dsh");
+  mkdirSync(dshDir, { recursive: true });
+  writeFileSync(
+    join(dshDir, "package.json"),
+    JSON.stringify(
+      { name: "dsh-host", private: true, type: "module" },
+      null,
+      2,
+    ),
+  );
   onProgress?.({
     stage: "installing-dsh",
-    detail: "首次安装 dsh（国内镜像），请稍候…",
+    detail: "安装 dsh 依赖（国内镜像），首次约 1-3 分钟…",
   });
   const status = await new Promise<number | null>((resolve) => {
     const child = spawn(
       node.executable,
       [
-        node.npmCli,
-        "install",
-        "--prefix",
-        join(userDataDir, "dsh"),
+        pnpmCli,
+        "add",
         "@deepseek-ai/dsh",
+        "--ignore-scripts",
+        "--store-dir",
+        join(userDataDir, "pnpm-store"),
+        "--registry",
+        "https://registry.npmmirror.com",
       ],
-      { env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
+      {
+        cwd: dshDir,
+        env,
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
     );
-    child.stderr?.on("data", (c: Buffer) => process.stderr.write(c));
+    child.stdout?.on("data", (c: Buffer) => {
+      handlePnpmOutput(c.toString(), onProgress);
+    });
+    child.stderr?.on("data", (c: Buffer) => {
+      process.stderr.write(c);
+      handlePnpmOutput(c.toString(), onProgress);
+    });
     child.on("error", () => resolve(null));
     child.on("close", (code) => resolve(code));
   });
