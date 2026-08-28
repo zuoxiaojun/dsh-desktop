@@ -44,7 +44,7 @@ dsh-desktop/
 │       ├── electron-builder.config.cjs
 │       ├── tsdown.config.ts
 │       └── tsconfig.json
-├── DESIGN.md              # 设计文档
+├── AGENTS.md              # 设计与代理指南
 ├── README.md              # 项目说明
 ├── LICENSE                # MIT
 ├── package.json
@@ -92,7 +92,7 @@ pnpm run dist
 - **方便跟随 DSH 官方更新**，升级只需 `pnpm update @deepseek-ai/dsh`
 - **标准原生窗口**，不搞自定义标题栏、不注入 CSS
 
-详见 [DESIGN.md](./DESIGN.md)。
+详见 [AGENTS.md](./AGENTS.md)。
 
 ## 许可证
 
