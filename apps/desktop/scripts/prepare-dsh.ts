@@ -14,6 +14,7 @@ import {
   mkdirSync,
   rmSync,
   writeFileSync,
+  readFileSync,
   readdirSync,
   statSync,
 } from "node:fs";
@@ -33,7 +34,7 @@ function main(): void {
   }
 
   // Read the exact version from the installed package
-  const pkgJson = JSON.parse(execSync(`cat "${dshPkg}"`, { encoding: "utf8" }));
+  const pkgJson = JSON.parse(readFileSync(dshPkg, "utf8"));
   const dshVersion = pkgJson.version;
   console.log("ℹ️  @deepseek-ai/dsh version:", dshVersion);
 
@@ -93,7 +94,6 @@ function main(): void {
   });
 
   // Flatten: move packages from .pnpm/*/node_modules/ to top-level node_modules/
-  // pnpm 把 195 个 @deepseek-ai/* 包藏在 .pnpm/ 哈希目录里，Node.js 找不到它们
   console.log("📦 Flattening pnpm virtual store to top-level node_modules...");
   flattenPnpmStore(targetNodeModules);
 
@@ -118,9 +118,7 @@ function main(): void {
   }
 
   const depCount = readdirSync(join(TARGET_DIR, "node_modules")).length;
-  const totalSize = execSync(`du -sh "${TARGET_DIR}"`, {
-    encoding: "utf8",
-  }).trim();
+  const totalSize = run(`du -sh "${TARGET_DIR}"`);
 
   console.log(
     `✅ dsh host prepared: ${depCount} top-level dependencies, ${totalSize}`,
@@ -128,13 +126,28 @@ function main(): void {
 
   // Quick smoke test: run `dsh --version` using the bundled copy
   console.log("🧪 Smoke-testing bundled dsh...");
-  const versionOut = execSync(
+  const versionOut = run(
     `node --expose-internals "${dshEntry}" --version`,
-    { cwd: TARGET_DIR, encoding: "utf8" },
-  ).trim();
+    { cwd: TARGET_DIR },
+  );
   console.log(`   dsh --version = ${versionOut}`);
 
   console.log("✅ prepare-dsh complete");
+}
+
+/** Run a shell command and return trimmed stdout. Exits the process on failure. */
+function run(cmd: string, opts?: { cwd?: string }): string {
+  try {
+    return execSync(cmd, { encoding: "utf8", stdio: "pipe", ...opts })
+      .toString()
+      .trim();
+  } catch (e: unknown) {
+    const err = e as { stderr?: Buffer; message?: string };
+    console.error(`❌ Command failed: ${cmd}`);
+    if (err.stderr) console.error(err.stderr.toString().trim());
+    else console.error(err.message);
+    process.exit(1);
+  }
 }
 
 /** Flatten pnpm virtual store: move packages from .pnpm/<hash>/node_modules/ to top-level */
@@ -170,7 +183,11 @@ function moveAll(srcDir: string, dstDir: string): void {
         moveAll(src, dst);
       }
     } else {
-      execSync(`mv "${src}" "${dst}"`, { stdio: "ignore" });
+      try {
+        execSync(`mv "${src}" "${dst}"`, { stdio: "ignore" });
+      } catch {
+        // ignore individual move failures, may be a race with another moveAll
+      }
     }
   }
 }
