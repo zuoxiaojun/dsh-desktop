@@ -1045,9 +1045,7 @@ const COLOR = /^#[0-9a-fA-F]{6}$/u
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/u
 const MEDIA_ORIGINS = new Set([
   'https://avatars.githubusercontent.com',
-  'https://cdn.deepseek.com',
   'https://raw.githubusercontent.com',
-  'https://static.deepseek.com',
 ])
 const KINDS = ['plugin', 'skill-pack'] as const
 const SCOPES = ['public', 'local'] as const
@@ -1059,11 +1057,9 @@ const FRESHNESS = ['fresh', 'cached', 'stale'] as const
 const RISKS = ['low', 'medium', 'high'] as const
 const SECTIONS = ['featured', 'popular', 'recent'] as const
 const ARTIFACT_ORIGINS = new Set([
-  'https://cdn.deepseek.com',
   'https://github.com',
   'https://objects.githubusercontent.com',
   'https://registry.npmjs.org',
-  'https://static.deepseek.com',
 ])
 const OPERATION_PHASES = PLUGIN_OPERATION_PHASES
 const OPERATION_FAILURE_CODES = PLUGIN_OPERATION_FAILURE_CODES
@@ -1084,11 +1080,8 @@ const REGISTRY_OPERATIONS = REGISTRY_OPERATION_CODES
 const REGISTRY_ERRORS = REGISTRY_ERROR_CODES
 const INSTALLATION_ID = /^[0-9a-f]{32,64}$/u
 const OBJECT_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u
-const PRESET_SQUARE_ORIGIN = 'https://www.dshdesktop.com'
-const PRESET_SQUARE_ALLOWED_ORIGINS = new Set([
-  PRESET_SQUARE_ORIGIN,
-  'https://dshdesktop.com',
-])
+const PRESET_SQUARE_ORIGIN = ''
+const PRESET_SQUARE_ALLOWED_ORIGINS = new Set<string>()
 const PRESET_SQUARE_PATH_PREFIX = '/preset/'
 const PRESET_SORTS = PRESET_SQUARE_SORTS
 const PRESET_WARNINGS = PRESET_ARCHIVE_WARNINGS

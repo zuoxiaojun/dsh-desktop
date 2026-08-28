@@ -76,7 +76,7 @@ export function extractPalette(canvas: HTMLCanvasElement): AppearancePalette {
   if (colors.length < 20) return DEFAULT_PALETTE
 
   const byLightness = [...colors].sort((a, b) => luminance(a) - luminance(b))
-  let centers = [0.08, 0.34, 0.66, 0.92].map((point) =>
+  let centers = [0.08, 0.34, 0.66, 0.92].map(point =>
     [...byLightness[Math.floor((byLightness.length - 1) * point)]!] as RGB)
   for (let round = 0; round < 7; round += 1) {
     const groups: RGB[][] = centers.map(() => [])

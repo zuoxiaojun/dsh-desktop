@@ -21,12 +21,9 @@ import {
   type PresetSquareBundledCatalog,
 } from './bundled-catalog.ts'
 
-const PRESET_SQUARE_ORIGIN = 'https://www.dshdesktop.com'
-const PRESET_SQUARE_ALLOWED_ORIGINS = new Set([
-  PRESET_SQUARE_ORIGIN,
-  'https://dshdesktop.com',
-])
-const PRESET_SQUARE_ROOT = `${PRESET_SQUARE_ORIGIN}/preset/`
+const PRESET_SQUARE_ORIGIN = ''
+const PRESET_SQUARE_ALLOWED_ORIGINS = new Set<string>()
+const PRESET_SQUARE_ROOT = ''
 const MAX_METADATA_BYTES = 512 * 1024
 const MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
 const REQUEST_TIMEOUT_MS = 10_000
