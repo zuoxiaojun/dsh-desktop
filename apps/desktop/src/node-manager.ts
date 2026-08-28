@@ -1,7 +1,8 @@
 /** Node.js runtime resolution and managed installation for the desktop shell. */
 
 import { createHash } from "node:crypto";
-import { createReadStream, createWriteStream } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, createReadStream, createWriteStream } from "node:fs";
 import { get as httpGet } from "node:http";
 import { get as httpsGet } from "node:https";
 import { dirname, join, win32 } from "node:path";
@@ -98,6 +99,60 @@ export function checksumFor(
     throw new Error(`no SHA256 checksum configured for Node on ${key}`);
   }
   return sum;
+}
+
+function runCommand(
+  command: string,
+  args: readonly string[],
+  shell: boolean,
+): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, { shell, windowsHide: true });
+    let out = "";
+    child.stdout?.on("data", (c: Buffer) => {
+      out += c.toString();
+    });
+    child.on("error", () => resolve(undefined));
+    child.on("close", (code) => {
+      resolve(code === 0 ? out : undefined);
+    });
+  });
+}
+
+export async function locateNodeExecutable(
+  platform: NodeJS.Platform,
+): Promise<string | undefined> {
+  const raw = await runCommand(
+    platform === "win32" ? "where.exe" : "which",
+    ["node"],
+    false,
+  );
+  const first = raw?.split(/\r?\n/u).find((line) => line.trim() !== "");
+  return first?.trim();
+}
+
+export async function runNodeVersion(
+  nodeExecutable: string,
+): Promise<string | undefined> {
+  const out = await runCommand(nodeExecutable, ["--version"], false);
+  return out === undefined ? undefined : out.trim();
+}
+
+export async function detectSystemNode(
+  platform: NodeJS.Platform,
+  minSystemNode: number,
+): Promise<NodeInfo | undefined> {
+  const executable = await locateNodeExecutable(platform);
+  if (executable === undefined) return undefined;
+  const rawVersion = await runNodeVersion(executable);
+  if (rawVersion === undefined) return undefined;
+  const version = parseNodeVersion(rawVersion);
+  if (version === undefined) return undefined;
+  const major = nodeMajor(version);
+  if (major === undefined || major < minSystemNode) return undefined;
+  const npmCli = resolveNpmCli(executable, platform);
+  if (!existsSync(npmCli)) return undefined;
+  return { executable, version, managed: false, npmCli };
 }
 
 export function resolveNpmCli(
