@@ -10,7 +10,7 @@
     "build": "tsdown -c apps/desktop/tsdown.config.ts",
     "prepare:dsh": "tsx apps/desktop/scripts/prepare-dsh.ts",
     "package": "pnpm run prepare:dsh && pnpm run build && electron-builder --dir -c apps/desktop/electron-builder.config.cjs",
-    "dist:mac": "pnpm run prepare:dsh && pnpm run build && electron-builder --dir --mac -c apps/desktop/electron-builder.config.cjs && bash apps/desktop/scripts/package-dmg.sh",
+    "dist:mac": "pnpm run prepare:dsh && pnpm run build && electron-builder --dir --mac -c apps/desktop/electron-builder.config.cjs && bash apps/desktop/scripts/verify-app.sh && bash apps/desktop/scripts/package-dmg.sh",
     "dist:win": "pnpm run prepare:dsh && pnpm run build && electron-builder --win -c apps/desktop/electron-builder.config.cjs",
     "dist:linux": "pnpm run prepare:dsh && pnpm run build && electron-builder --linux -c apps/desktop/electron-builder.config.cjs",
     "dist:all": "pnpm run prepare:dsh && pnpm run build && electron-builder --mac --win --linux -c apps/desktop/electron-builder.config.cjs",

@@ -13,9 +13,10 @@ export interface DesktopBridge {
 
 const bridge: DesktopBridge = Object.freeze({
   platform: process.platform,
-  versions: ipcRenderer.invoke("dsh-desktop:get-versions") as Promise<
-    { desktop: string; dsh: string | undefined }
-  >,
+  versions: ipcRenderer.invoke("dsh-desktop:get-versions") as Promise<{
+    desktop: string;
+    dsh: string | undefined;
+  }>,
   workspace: Object.freeze({
     pickDirectory: () =>
       ipcRenderer.invoke("dsh-desktop:workspace:pick-directory") as Promise<
