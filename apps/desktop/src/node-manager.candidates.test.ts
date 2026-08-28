@@ -16,9 +16,7 @@ describe("nodeCandidates (darwin)", () => {
 describe("nodeCandidates (win32)", () => {
   it("includes Program Files and local app data", () => {
     const paths = nodeCandidates("win32", "C:\\Users\\me");
-    expect(paths).toContain(
-      "C:\\Program Files\\nodejs\\node.exe",
-    );
+    expect(paths).toContain("C:\\Program Files\\nodejs\\node.exe");
     expect(paths).toContain(
       "C:\\Users\\me\\AppData\\Local\\Programs\\nodejs\\node.exe",
     );
