@@ -1,9 +1,8 @@
 /** Electron application shell for the loopback DSH Desktop Web Host. */
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawn } from "node:child_process";
 import { env } from "node:process";
 import {
   app,
@@ -19,9 +18,22 @@ import {
 } from "electron";
 import {
   createHostSupervisor,
+  spawnDshWeb,
   type HostSupervisor,
-  type HostChild,
 } from "./host-supervisor.ts";
+import {
+  ensureManagedDsh,
+  readManagedDshVersion,
+  resolveNode,
+  type NodeInfo,
+  type NodeProgress,
+  type NodeVersionsConfig,
+} from "./node-manager.ts";
+import {
+  createBootWindow,
+  setBootRetryHandler,
+  type BootWindow,
+} from "./boot-window.ts";
 import {
   createDesktopLifecycle,
   isInstallerQuitRequest,
@@ -39,6 +51,10 @@ let host: HostSupervisor | undefined;
 let lifecycle: DesktopLifecycle | undefined;
 let bootQuitPromise: Promise<void> | undefined;
 let quitReleased = false;
+let bootWindow: BootWindow | undefined;
+let abortController: AbortController | undefined;
+let nodeInfo: NodeInfo | undefined;
+let ipcRegistered = false;
 
 function readDesktopVersion(): string {
   try {
@@ -51,123 +67,18 @@ function readDesktopVersion(): string {
   }
 }
 
-function readDshVersion(): string | undefined {
-  const dshEntry = resolveDshEntry();
-  if (dshEntry === undefined) return undefined;
-  try {
-    const pkg = JSON.parse(
-      readFileSync(join(dirname(dshEntry), "../package.json"), "utf8"),
-    );
-    return pkg.version;
-  } catch {
-    return undefined;
-  }
-}
-
 const DESKTOP_VERSION = readDesktopVersion();
-const DSH_VERSION = readDshVersion();
+let DSH_VERSION: string | undefined;
 
-function resolveDshEntry(): string | undefined {
-  // 打包后: Electron.app/Contents/Resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js
-  // 开发时: apps/desktop/resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js
-  const candidates = [
-    // 生产环境 (process.resourcesPath 在打包后指向 app.asar 解压目录)
-    ...(process.resourcesPath
-      ? [
-          join(
-            process.resourcesPath,
-            "dsh/node_modules/@deepseek-ai/dsh/lib/bin.js",
-          ),
-        ]
-      : []),
-    // 开发环境
-    join(DESKTOP_DIR, "resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js"),
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) return p;
+const NODE_VERSIONS: NodeVersionsConfig = (() => {
+  try {
+    return JSON.parse(
+      readFileSync(join(DESKTOP_DIR, "resources/node-versions.json"), "utf8"),
+    ) as NodeVersionsConfig;
+  } catch (error) {
+    throw new Error(`node-versions.json missing or invalid: ${String(error)}`);
   }
-  return undefined;
-}
-
-function spawnDshWeb(): HostChild {
-  // 优先使用 Electron 自带的 Node.js 运行捆绑的 dsh
-  const dshEntry = resolveDshEntry();
-
-  if (dshEntry !== undefined) {
-    const child = spawn(
-      process.execPath,
-      [
-        "--expose-internals",
-        dshEntry,
-        "web",
-        "--no-open",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "0",
-      ],
-      {
-        cwd: env.HOME || process.cwd(),
-        env: { ...env, DSH_DESKTOP: "1", ELECTRON_RUN_AS_NODE: "1" },
-        stdio: ["ignore", "pipe", "pipe"],
-        windowsHide: true,
-      },
-    );
-    return adaptChild(child);
-  }
-
-  // 兜底：通过 npx 运行（用户需自行安装 Node.js + dsh）
-  const child = spawn(
-    "npx",
-    [
-      "@deepseek-ai/dsh",
-      "web",
-      "--no-open",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      "0",
-    ],
-    {
-      cwd: env.HOME || process.cwd(),
-      env: { ...env, DSH_DESKTOP: "1" },
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-    },
-  );
-  return adaptChild(child);
-}
-
-function adaptChild(
-  child: import("node:child_process").ChildProcess,
-): HostChild {
-  return {
-    pid: child.pid ?? undefined,
-    stdout: {
-      onData: (listener) => {
-        const handler = (chunk: string | Buffer) => listener(chunk.toString());
-        child.stdout?.on("data", handler);
-        return () => child.stdout?.off("data", handler);
-      },
-    },
-    stderr: {
-      onData: (listener) => {
-        const handler = (chunk: string | Buffer) => listener(chunk.toString());
-        child.stderr?.on("data", handler);
-        return () => child.stderr?.off("data", handler);
-      },
-    },
-    onExit: (listener) => {
-      child.on("exit", listener);
-      return () => child.off("exit", listener);
-    },
-    onError: (listener) => {
-      child.on("error", listener);
-      return () => child.off("error", listener);
-    },
-    kill: (signal) => child.kill(signal),
-  };
-}
+})();
 
 function currentHostOrigin(): string | undefined {
   return host?.current?.origin;
@@ -343,19 +254,76 @@ function requestAppQuit(): Promise<void> {
 async function boot(): Promise<void> {
   if (bootQuitPromise !== undefined) return;
 
+  const bootHtml = join(DESKTOP_DIR, "resources/boot.html");
+  const bootPreload = join(DESKTOP_DIR, "lib/boot-preload.mjs");
+  if (bootWindow === undefined) {
+    bootWindow = createBootWindow({
+      desktopVersion: DESKTOP_VERSION,
+      bootHtmlPath: bootHtml,
+      bootPreloadPath: bootPreload,
+    });
+  }
+  bootWindow.show();
+
+  abortController = new AbortController();
+  const signal = abortController.signal;
+  const userDataDir = app.getPath("userData");
+
+  setBootRetryHandler(() => {
+    void (async () => {
+      if (host !== undefined) {
+        const previous = host;
+        host = undefined;
+        await previous.shutdown().catch(() => undefined);
+      }
+      await boot().catch(handleBootError);
+    })();
+  });
+
+  const onProgress = (p: NodeProgress): void => {
+    bootWindow?.update(p);
+  };
+
+  // 阶段一：解析 Node（系统 Node ≥18 优先，否则受管安装 v24 LTS）
+  const node = await resolveNode({
+    userDataDir,
+    config: NODE_VERSIONS,
+    onProgress,
+    signal,
+  });
+  nodeInfo = node;
+
+  // 阶段二：受管安装 dsh（首次联网拉取，走国内镜像）
+  const dshEntry = await ensureManagedDsh({
+    node,
+    userDataDir,
+    onProgress,
+    signal,
+  });
+
+  // 阶段三：Host 监督模型启动 dsh web
   host = createHostSupervisor({
-    spawnHost: spawnDshWeb,
+    spawnHost: () =>
+      spawnDshWeb({
+        nodeExecutable: node.executable,
+        dshEntry,
+        cwd: env.HOME || process.cwd(),
+        env: { ...env, DSH_DESKTOP: "1" },
+      }),
     log: (chunk) => process.stderr.write(chunk),
-    onUnexpectedExit: ({ code, signal }) => {
+    onUnexpectedExit: ({ code, signal: sig }) => {
       console.error(
-        `desktop Host exited unexpectedly (code ${String(code)}, signal ${String(signal)})`,
+        `desktop Host exited unexpectedly (code ${String(code)}, signal ${String(sig)})`,
       );
       void requestAppQuit();
     },
   });
 
-  hardenSession();
-  registerIpcHandlers();
+  if (!ipcRegistered) {
+    hardenSession();
+    registerIpcHandlers();
+    ipcRegistered = true;
+  }
 
   lifecycle = createDesktopLifecycle({
     getWindow: () => mainWindow,
@@ -372,9 +340,31 @@ async function boot(): Promise<void> {
     },
   });
 
+  bootWindow.update({ stage: "installing-dsh", detail: "正在启动 dsh…" });
   await host.start();
+
+  DSH_VERSION = readManagedDshVersion(userDataDir);
+
+  bootWindow.close();
+  bootWindow = undefined;
   createTray();
   await lifecycle.showWindow();
+}
+
+async function handleBootError(error: unknown): Promise<void> {
+  console.error("desktop startup failed:", error);
+  if (bootWindow !== undefined) {
+    const message = error instanceof Error ? error.message : String(error);
+    bootWindow.showError(message);
+    return;
+  }
+  const { dialog } = await import("electron");
+  await dialog.showMessageBox({
+    type: "error",
+    title: `${APP_NAME} failed to start`,
+    message: error instanceof Error ? error.message : String(error),
+  });
+  await requestAppQuit();
 }
 
 if (!app.requestSingleInstanceLock()) {
@@ -396,21 +386,13 @@ if (!app.requestSingleInstanceLock()) {
   app.on("before-quit", (event: Event) => {
     if (quitReleased) return;
     event.preventDefault();
+    abortController?.abort();
     void requestAppQuit();
   });
   app
     .whenReady()
     .then(boot)
-    .catch(async (error: unknown) => {
-      console.error("desktop startup failed:", error);
-      if (bootQuitPromise === undefined) {
-        const { dialog } = await import("electron");
-        await dialog.showMessageBox({
-          type: "error",
-          title: `${APP_NAME} failed to start`,
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
-      await requestAppQuit();
+    .catch((error: unknown) => {
+      void handleBootError(error);
     });
 }
