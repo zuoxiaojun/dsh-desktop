@@ -281,8 +281,5 @@ pnpm run dist:all              # 全平台
 
 ## 8. 已知问题
 
-- **代码签名**：未配置，macOS 会提示"无法验证开发者"
-- **正式图标**：暂用简单 SVG，后续可替换
-- **`@electron/get` 兼容性**：electron-builder 26.x 的 DMG 目标与新版 `@electron/get` 不兼容，已用 `hdiutil` 绕过
-- **自动更新**：`electron-updater` 未集成
-- **原生模块**：`@electron/rebuild` 未配置
+- **代码签名**：未配置签名证书，macOS 会提示"无法验证开发者"，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过
+- **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新
