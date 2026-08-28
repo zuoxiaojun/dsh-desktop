@@ -302,13 +302,7 @@ async function boot(): Promise<void> {
   // 阶段三：Host 监督模型启动 dsh web
   // 打包后 .app 的 PATH 只有系统最小集，dsh 插件 marketplace 会 spawnSync("pnpm")——
   // 注入完整 PATH（受管 pnpm bin + node bin + 系统路径 + 原 PATH）
-  const pnpmBin = join(
-    userDataDir,
-    "tools",
-    "pnpm",
-    "node_modules",
-    ".bin",
-  );
+  const pnpmBin = join(userDataDir, "tools", "pnpm", "node_modules", ".bin");
   host = createHostSupervisor({
     spawnHost: () =>
       spawnDshWeb({

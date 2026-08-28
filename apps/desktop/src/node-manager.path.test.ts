@@ -25,7 +25,9 @@ describe("hostPathFor", () => {
   });
 
   it("falls back to node bin when pnpm is not bootstrapped", () => {
-    const path = hostPathFor(NODE, undefined, "darwin", { PATH: "/custom/bin" });
+    const path = hostPathFor(NODE, undefined, "darwin", {
+      PATH: "/custom/bin",
+    });
     expect(path.split(":")[0]).toBe("/opt/homebrew/bin");
     expect(path.split(":")).toContain("/custom/bin");
   });
