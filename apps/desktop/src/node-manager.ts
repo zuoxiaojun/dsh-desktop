@@ -177,9 +177,7 @@ export function managedDshEntry(userDataDir: string): string {
   );
 }
 
-export function readManagedDshVersion(
-  userDataDir: string,
-): string | undefined {
+export function readManagedDshVersion(userDataDir: string): string | undefined {
   try {
     const pkg = JSON.parse(
       readFileSync(
@@ -230,7 +228,10 @@ export async function extractArchive(
   if (status !== 0) throw new Error(`extract failed for ${archivePath}`);
 }
 
-async function hashMatches(archivePath: string, expected: string): Promise<boolean> {
+async function hashMatches(
+  archivePath: string,
+  expected: string,
+): Promise<boolean> {
   const actual = await sha256File(archivePath);
   return actual.toLowerCase() === expected.toLowerCase();
 }
