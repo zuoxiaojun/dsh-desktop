@@ -6,15 +6,19 @@ module.exports = {
     app: "apps/desktop",
     output: "dist",
   },
-  files: ["lib/**", "package.json"],
+  files: ["lib/**", "package.json", "resources/**", "build/icon.png"],
   extraResources: [],
+  electronDist: require("path").resolve(
+    __dirname,
+    "../../node_modules/electron/dist",
+  ),
   mac: {
     category: "public.app-category.developer-tools",
-    icon: "apps/desktop/build/icon.svg",
+    icon: "build/icon.icns",
     target: ["dir"],
   },
   win: {
-    icon: "apps/desktop/build/icon.svg",
+    icon: "apps/desktop/build/icon.png",
     target: ["nsis"],
   },
   linux: {
