@@ -209,12 +209,11 @@ function registerIpcHandlers(): void {
 }
 
 function injectVersionBadge(win: BrowserWindow): void {
-  const html = DSH_VERSION
-    ? `DSH Desktop v${DESKTOP_VERSION}<br>dsh v${DSH_VERSION}`
-    : `DSH Desktop v${DESKTOP_VERSION}`;
+  const desktopText = JSON.stringify(`DSH Desktop v${DESKTOP_VERSION}`);
+  const dshText = DSH_VERSION ? JSON.stringify(`dsh v${DSH_VERSION}`) : "null";
   win.webContents
     .executeJavaScript(
-      `(()=>{const c=document.getElementById("dsh-desktop-version");if(c)return;const s=document.createElement("style");s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);const d=document.createElement("div");d.id="dsh-desktop-version";d.innerHTML=${JSON.stringify(html)};document.body.appendChild(d);const o=new MutationObserver(()=>{if(!document.getElementById("dsh-desktop-version")){const n=document.createElement("div");n.id="dsh-desktop-version";n.innerHTML=${JSON.stringify(html)};document.body.appendChild(n)}});o.observe(document.body,{childList:true,subtree:true})})()`,
+      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const render=()=>{if(document.getElementById(ID))return;if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}document.body.appendChild(d);};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
     )
     .catch(() => {
       /* ignore */
