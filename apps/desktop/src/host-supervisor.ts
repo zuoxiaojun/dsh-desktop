@@ -1,4 +1,4 @@
-/** Supervise the loopback Web Host used by the first desktop application. */
+/** Supervise the loopback Web Host used by the desktop application. */
 
 import { spawn, type ChildProcessByStdio } from 'node:child_process'
 import type { Readable } from 'node:stream'
@@ -10,16 +10,7 @@ const MAX_STARTUP_OUTPUT_CHARS = 32_768
 
 /** Incremental parser for the Web Host's canonical readiness line. */
 export interface ReadinessParser {
-  /**
-   * Consume one stdout chunk.
-   * @param chunk - Text emitted by the Host.
-   * @returns The loopback URL once a complete readiness line is observed.
-   */
   push(chunk: string): string | undefined
-  /**
-   * Finish the stream and require a readiness line.
-   * @returns The parsed loopback URL.
-   */
   finalize(): string
 }
 
@@ -49,10 +40,7 @@ function parseReadinessLine(line: string): string | undefined {
   return url.origin
 }
 
-/**
- * Create a line parser whose result is stable after readiness.
- * @returns A fresh incremental parser.
- */
+/** Create a line parser whose result is stable after readiness. */
 export function createReadinessParser(): ReadinessParser {
   let pending = ''
   let readyUrl: string | undefined
@@ -99,43 +87,30 @@ export interface HostChild {
 
 /** Configuration and platform operations for one Host supervisor. */
 export interface HostSupervisorOptions {
-  /** Spawn one Host process. */
   readonly spawnHost: () => HostChild
-  /** Maximum startup time before the Host is terminated. */
   readonly readinessTimeoutMs?: number
-  /** Grace after SIGTERM before SIGKILL. */
   readonly shutdownTimeoutMs?: number
-  /** Receives bounded Host output for desktop diagnostics. */
   readonly log?: (line: string) => void
-  /** Called when a ready Host exits outside an application-owned shutdown. */
   readonly onUnexpectedExit?: (detail: HostUnexpectedExit) => void
 }
 
 /** Public identity of one ready Host generation. */
 export interface HostGeneration {
-  /** Monotonically increasing identity assigned when the child is spawned. */
   readonly id: number
-  /** Loopback origin emitted by this generation's readiness line. */
   readonly origin: string
 }
 
 /** Detail reported when the currently owned ready generation exits by itself. */
 interface HostUnexpectedExit extends HostGeneration {
-  /** Child exit code, when the operating system supplied one. */
   readonly code: number | null
-  /** Child termination signal, when the operating system supplied one. */
   readonly signal: NodeJS.Signals | null
 }
 
 /** Handle for the desktop-owned Host generations. */
 export interface HostSupervisor {
-  /** The ready generation currently owned by the desktop, if any. */
   readonly current: HostGeneration | undefined
-  /** Start one generation, or join the in-flight/current start. */
   start(): Promise<string>
-  /** Stop the current generation, run an optional owned change, then start its replacement. */
   restart(reason: string, beforeStart?: () => Promise<void>): Promise<HostGeneration>
-  /** Permanently close the supervisor and stop its final generation. */
   shutdown(): Promise<void>
 }
 
@@ -173,11 +148,7 @@ interface HostGenerationState {
   readinessTimer?: ReturnType<typeof setTimeout>
 }
 
-/**
- * Create a single-owner, multi-generation Host supervisor.
- * @param options - Child-process operations and bounded lifecycle timings.
- * @returns A supervisor that coalesces starts and shutdowns while serializing restarts.
- */
+/** Create a single-owner, multi-generation Host supervisor. */
 export function createHostSupervisor(options: HostSupervisorOptions): HostSupervisor {
   const readinessTimeoutMs = options.readinessTimeoutMs ?? DEFAULT_READINESS_TIMEOUT_MS
   const shutdownTimeoutMs = options.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS
@@ -305,19 +276,12 @@ export function createHostSupervisor(options: HostSupervisorOptions): HostSuperv
     }
   }
 
-  const assertRestartOpen = (): void => {
-    if (permanentlyClosed) throw new Error('desktop Host cannot restart after shutdown')
-  }
-
   const restart = (reason: string, beforeStart?: () => Promise<void>): Promise<HostGeneration> => {
     if (permanentlyClosed) return Promise.reject(new Error('desktop Host cannot restart after shutdown'))
     const operation = restartQueue.then(async () => {
-      assertRestartOpen()
       const previous = active
       if (previous !== undefined) await stopGeneration(previous, { kind: 'restart', reason })
-      assertRestartOpen()
       await beforeStart?.()
-      assertRestartOpen()
       const next = createGeneration()
       const origin = await next.readiness.promise
       return { id: next.id, origin }
@@ -357,15 +321,10 @@ export function createHostSupervisor(options: HostSupervisorOptions): HostSuperv
 
 /** Options for the real `dsh web` child. */
 export interface SpawnDshWebOptions {
-  /** Node-compatible executable selected by the desktop app. */
   readonly nodeExecutable: string
-  /** Built dsh CLI entry. */
   readonly cliEntry: string
-  /** Working directory inherited by user-created sessions and tools. */
   readonly cwd: string
-  /** Frozen environment for the Host process. */
   readonly env: NodeJS.ProcessEnv
-  /** Run the Electron executable as its bundled Node runtime. */
   readonly electronRunAsNode?: boolean
 }
 
@@ -379,11 +338,7 @@ function streamAdapter(stream: NodeJS.ReadableStream): HostChild['stdout'] {
   }
 }
 
-/**
- * Spawn the production Web Host on an OS-assigned loopback port.
- * @param options - Node runtime, built CLI and process environment.
- * @returns The child handle consumed by {@link createHostSupervisor}.
- */
+/** Spawn the production Web Host on an OS-assigned loopback port. */
 export function spawnDshWeb(options: SpawnDshWebOptions): HostChild {
   const env = options.electronRunAsNode
     ? { ...options.env, ELECTRON_RUN_AS_NODE: '1' }

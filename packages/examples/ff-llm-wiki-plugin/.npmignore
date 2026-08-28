@@ -1,6 +1,0 @@
-application/**/node_modules/
-application/**/.next/
-application/**/*.tsbuildinfo
-application/**/*.db-shm
-application/**/*.db-wal
-.application-build/

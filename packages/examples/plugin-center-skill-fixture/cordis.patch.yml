@@ -1,3 +1,0 @@
-- insert:
-    - id: fixture.harness-basics-provider
-      name: '@deepseek-ai/dsh-plugin-center-skill-fixture'
