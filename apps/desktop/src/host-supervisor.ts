@@ -391,10 +391,9 @@ export function createHostSupervisor(
 /** Options for the real `dsh web` child. */
 export interface SpawnDshWebOptions {
   readonly nodeExecutable: string;
-  readonly cliEntry: string;
+  readonly dshEntry: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
-  readonly electronRunAsNode?: boolean;
 }
 
 function streamAdapter(stream: NodeJS.ReadableStream): HostChild["stdout"] {
@@ -413,14 +412,11 @@ function streamAdapter(stream: NodeJS.ReadableStream): HostChild["stdout"] {
 
 /** Spawn the production Web Host on an OS-assigned loopback port. */
 export function spawnDshWeb(options: SpawnDshWebOptions): HostChild {
-  const env = options.electronRunAsNode
-    ? { ...options.env, ELECTRON_RUN_AS_NODE: "1" }
-    : options.env;
   const process = spawn(
     options.nodeExecutable,
     [
       "--expose-internals",
-      options.cliEntry,
+      options.dshEntry,
       "web",
       "--no-open",
       "--host",
@@ -430,7 +426,7 @@ export function spawnDshWeb(options: SpawnDshWebOptions): HostChild {
     ],
     {
       cwd: options.cwd,
-      env,
+      env: options.env,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     },
