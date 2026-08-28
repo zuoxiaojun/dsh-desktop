@@ -69,6 +69,12 @@ function main(): void {
   // Force pnpm to hoist all dependencies to a flat node_modules (no .pnpm virtual store)
   writeFileSync(join(tmpDir, ".npmrc"), "node-linker=hoisted\n");
 
+  // pnpm must be on PATH (hoisted node-linker is required)
+  ensureCommand(
+    "pnpm",
+    "Install pnpm and re-run: corepack enable pnpm  (or  npm i -g pnpm).",
+  );
+
   // Install in the temp dir (outside workspace, so pnpm creates a proper flat node_modules)
   console.log("📦 Installing @deepseek-ai/dsh with dependencies...");
   execSync(`pnpm install --no-frozen-lockfile --ignore-scripts`, {
@@ -125,6 +131,7 @@ function main(): void {
   );
 
   // Quick smoke test: run `dsh --version` using the bundled copy
+  ensureCommand("node", "Ensure Node.js is on PATH.");
   console.log("🧪 Smoke-testing bundled dsh...");
   const versionOut = run(`node --expose-internals "${dshEntry}" --version`, {
     cwd: TARGET_DIR,
@@ -132,6 +139,16 @@ function main(): void {
   console.log(`   dsh --version = ${versionOut}`);
 
   console.log("✅ prepare-dsh complete");
+}
+
+/** Fail with a clear hint when a required command is missing from PATH. */
+function ensureCommand(cmd: string, hint: string): void {
+  try {
+    execSync(`command -v ${cmd}`, { stdio: "pipe" });
+  } catch {
+    console.error(`❌ ${cmd} not found in PATH. ${hint}`);
+    process.exit(1);
+  }
 }
 
 /** Run a shell command and return trimmed stdout. Exits the process on failure. */

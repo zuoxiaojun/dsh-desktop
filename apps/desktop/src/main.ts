@@ -213,7 +213,7 @@ function injectVersionBadge(win: BrowserWindow): void {
   const dshText = DSH_VERSION ? JSON.stringify(`dsh v${DSH_VERSION}`) : "null";
   win.webContents
     .executeJavaScript(
-      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const render=()=>{if(document.getElementById(ID))return;if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}document.body.appendChild(d);};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
+      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const render=()=>{if(document.getElementById(ID))return;if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode("Built by leftxiaojun"));document.body.appendChild(d);};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
     )
     .catch(() => {
       /* ignore */
@@ -265,6 +265,9 @@ async function createMainWindow(): Promise<BrowserWindow> {
   });
 
   mainWindow = window;
+  window.on("page-title-updated", (event) => {
+    event.preventDefault();
+  });
   window.on("close", (event) => {
     lifecycle?.onWindowClose(event);
   });
