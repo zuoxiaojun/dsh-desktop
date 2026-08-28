@@ -24,10 +24,5 @@
     "tsx": "^4.0.0",
     "typescript": "^6.0.0",
     "vitest": "^4.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }

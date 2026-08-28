@@ -6,6 +6,8 @@ export default defineConfig({
   platform: "node",
   outDir: "lib",
   clean: true,
-  bundle: false,
-  external: ["electron", "electron-updater"],
+  unbundle: true,
+  deps: {
+    neverBundle: ["electron", "electron-updater"],
+  },
 });
