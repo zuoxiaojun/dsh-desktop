@@ -208,8 +208,17 @@ function registerIpcHandlers(): void {
   }));
 }
 
-function injectVersionBadge(_win: BrowserWindow): void {
-  /* migrated to preload.ts */
+function injectVersionBadge(win: BrowserWindow): void {
+  const html = DSH_VERSION
+    ? `DSH Desktop v${DESKTOP_VERSION}<br>dsh v${DSH_VERSION}`
+    : `DSH Desktop v${DESKTOP_VERSION}`;
+  win.webContents
+    .executeJavaScript(
+      `(()=>{const e=document.getElementById("dsh-desktop-version");if(e)return;const s=document.createElement("style");s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);const d=document.createElement("div");d.id="dsh-desktop-version";d.innerHTML=${JSON.stringify(html)};document.body.appendChild(d)})()`,
+    )
+    .catch(() => {
+      /* ignore */
+    });
 }
 
 function hardenSession(): void {
@@ -274,7 +283,10 @@ async function createMainWindow(): Promise<BrowserWindow> {
     return { action: "deny" };
   });
   window.webContents.on("did-finish-load", () => {
-    /* version badge is injected by preload.ts */
+    injectVersionBadge(window);
+  });
+  window.webContents.on("did-navigate-in-page", () => {
+    injectVersionBadge(window);
   });
 
   await window.loadURL(desktopRendererUrl(origin));
