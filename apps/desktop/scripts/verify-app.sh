@@ -6,8 +6,17 @@ set -euo pipefail
 
 APP_PATH="${1:-}"
 if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
-  echo "❌ 用法: $0 <path/to/DSH Desktop.app>"
-  exit 1
+  # Auto-detect from project dist/
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  DEFAULT_APP="$PROJECT_DIR/dist/mac-arm64/DSH Desktop.app"
+  if [ -d "$DEFAULT_APP" ]; then
+    APP_PATH="$DEFAULT_APP"
+  else
+    echo "❌ 用法: $0 <path/to/DSH Desktop.app>"
+    echo "   未找到自动检测路径: $DEFAULT_APP"
+    exit 1
+  fi
 fi
 
 echo "🔍 Verifying packaged app at ${APP_PATH}..."
