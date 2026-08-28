@@ -12,19 +12,9 @@ module.exports = {
     "package.json",
     "resources/icon.svg",
     "resources/version.json",
+    "resources/boot.html",
+    "resources/node-versions.json",
     "build/icon.png",
-    "!resources/dsh/**",
-  ],
-  extraResources: [
-    {
-      from: "apps/desktop/resources/dsh/node_modules",
-      to: "dsh/node_modules",
-      filter: ["**/*"],
-    },
-    {
-      from: "apps/desktop/resources/dsh/package.json",
-      to: "dsh/package.json",
-    },
   ],
   electronDist: require("path").resolve(
     __dirname,

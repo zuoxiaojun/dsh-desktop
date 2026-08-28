@@ -1,17 +1,16 @@
 #!/bin/bash
-# 验证打包后的 .app 能否正常启动 dsh web
+# 验证打包后的 .app 结构（纯壳架构：不含 dsh 打包，含受管运行时资源）
 # 在 electron-builder --dir 之后、package-dmg.sh 之前运行
 
 set -euo pipefail
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "❌ node not found in PATH; verify-app.sh needs node to read package versions" >&2
+  echo "❌ node not found in PATH; verify-app.sh needs node" >&2
   exit 1
 fi
 
 APP_PATH="${1:-}"
 if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
-  # Auto-detect from project dist/
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
   DEFAULT_APP="$PROJECT_DIR/dist/mac-arm64/DSH Desktop.app"
@@ -27,68 +26,58 @@ fi
 echo "🔍 Verifying packaged app at ${APP_PATH}..."
 echo ""
 
-# 1. 检查 dsh 入口文件
-DSH_ENTRY="${APP_PATH}/Contents/Resources/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js"
-if [ ! -f "$DSH_ENTRY" ]; then
-  echo "❌ dsh entry not found: ${DSH_ENTRY}"
+RESOURCES="${APP_PATH}/Contents/Resources"
+
+# 1. node-versions.json 存在、可解析、含当前平台 checksum
+NODE_VERSIONS="${RESOURCES}/node-versions.json"
+if [ ! -f "$NODE_VERSIONS" ]; then
+  echo "❌ node-versions.json not found"
   exit 1
 fi
-echo "✅ dsh entry: ${DSH_ENTRY}"
-
-# 2. 检查 dsh 版本号
-DSH_PKG="${APP_PATH}/Contents/Resources/dsh/node_modules/@deepseek-ai/dsh/package.json"
-if [ -f "$DSH_PKG" ]; then
-  DSH_VER=$(node -e "console.log(JSON.parse(require('fs').readFileSync('${DSH_PKG}','utf8')).version)")
-  echo "✅ dsh version: ${DSH_VER}"
+ARCH=$(uname -m)
+[ "$ARCH" = "x86_64" ] && ARCH="x64"
+NODE_KEY="darwin-${ARCH}"
+SUM=$(node -e "const c=require('${NODE_VERSIONS}');console.log(c.checksums['${NODE_KEY}']||'')")
+if [ -z "$SUM" ]; then
+  echo "⚠️  checksum for ${NODE_KEY} is empty (发布前需从 SHASUMS256.txt 填入)"
 else
-  echo "❌ dsh package.json not found"
+  echo "✅ node-versions.json: v$(node -e "console.log(require('${NODE_VERSIONS}').version)") (${NODE_KEY} checksum set)"
+fi
+
+# 2. boot.html（闪屏页面）
+if [ -f "${RESOURCES}/boot.html" ]; then
+  echo "✅ boot.html"
+else
+  echo "❌ boot.html missing"
   exit 1
 fi
 
-# 3. 检查关键依赖是否存在
-echo "   Checking key dependencies..."
-for dep in "@deepseek-ai/dsh-web-frontend" "@deepseek-ai/cordis" "node-pty" "sharp"; do
-  DEP_PATH="${APP_PATH}/Contents/Resources/dsh/node_modules/${dep}"
-  if [ -d "$DEP_PATH" ]; then
-    echo "   ✅ ${dep}"
-  else
-    echo "   ❌ ${dep} missing"
-    exit 1
-  fi
-done
-
-# 4. 检查原生模块（平台相关）
-NATIVE_PTY="${APP_PATH}/Contents/Resources/dsh/node_modules/node-pty/prebuilds/darwin-arm64/pty.node"
-if [ -f "$NATIVE_PTY" ]; then
-  echo "✅ native module (node-pty darwin-arm64): found"
+# 3. app.asar 存在（含 main/preload/boot-preload）
+if [ -f "${RESOURCES}/app.asar" ]; then
+  echo "✅ app.asar ($(ls -lh "${RESOURCES}/app.asar" | awk '{print $5}'))"
 else
-  echo "⚠️  native module (node-pty darwin-arm64): not found (may still work with prebuild fallback)"
+  echo "❌ app.asar missing"
+  exit 1
 fi
 
-# 5. 用 Electron 的 Node.js 跑 dsh --version
-echo ""
-echo "🧪 Smoke test: dsh --version via Electron Node.js..."
-ELECTRON_NODE="${APP_PATH}/Contents/Frameworks/Electron Framework.framework/Versions/A/Helpers/Electron Helper (Alerts).app/Contents/MacOS/Electron Helper (Alerts)"
-ELECTRON_EXEC="${APP_PATH}/Contents/MacOS/DSH Desktop"
-
-# 用 ELECTRON_RUN_AS_NODE 模式
-VERSION_OUT=$(ELECTRON_RUN_AS_NODE=1 "$ELECTRON_EXEC" --expose-internals "$DSH_ENTRY" --version 2>/dev/null || true)
-if [ -n "$VERSION_OUT" ]; then
-  echo "✅ dsh --version = ${VERSION_OUT}"
+# 4. 不包含 dsh 目录（纯壳）
+if [ -d "${RESOURCES}/dsh" ]; then
+  echo "❌ Resources/dsh still present (纯壳架构不应打包 dsh)"
+  exit 1
 else
-  echo "⚠️  dsh --version via Electron Node.js failed (may still work at runtime)"
+  echo "✅ 未打包 dsh（纯壳）"
 fi
 
-# 6. 检查 version.json
-VERSION_JSON_RES="${APP_PATH}/Contents/Resources/version.json"
+# 5. version.json
+VERSION_JSON_RES="${RESOURCES}/version.json"
 if [ -f "$VERSION_JSON_RES" ]; then
   echo "✅ desktop version: $(node -e "console.log(JSON.parse(require('fs').readFileSync('${VERSION_JSON_RES}','utf8')).version)")"
 else
   echo "✅ desktop version: 1.0.0 (embedded in asar)"
 fi
 
-# 7. 检查图标
-ICON="${APP_PATH}/Contents/Resources/icon.icns"
+# 6. 图标
+ICON="${RESOURCES}/icon.icns"
 if [ -f "$ICON" ]; then
   echo "✅ icon.icns: $(ls -lh "$ICON" | awk '{print $5}')"
 else

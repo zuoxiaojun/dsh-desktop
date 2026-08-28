@@ -33,6 +33,24 @@ function collectFingerprint(): Fingerprint {
       lifecycle: hash(
         readFileSync(resolve(DESKTOP_DIR, "src/window-lifecycle.ts"), "utf8"),
       ),
+      nodeManager: hash(
+        readFileSync(resolve(DESKTOP_DIR, "src/node-manager.ts"), "utf8"),
+      ),
+      bootWindow: hash(
+        readFileSync(resolve(DESKTOP_DIR, "src/boot-window.ts"), "utf8"),
+      ),
+      bootPreload: hash(
+        readFileSync(resolve(DESKTOP_DIR, "src/boot-preload.ts"), "utf8"),
+      ),
+      bootHtml: hash(
+        readFileSync(resolve(DESKTOP_DIR, "resources/boot.html"), "utf8"),
+      ),
+      nodeVersions: hash(
+        readFileSync(
+          resolve(DESKTOP_DIR, "resources/node-versions.json"),
+          "utf8",
+        ),
+      ),
     },
     tsconfig: {
       desktop: hash(

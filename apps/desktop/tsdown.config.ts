@@ -1,7 +1,7 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/main.ts", "src/preload.ts"],
+  entry: ["src/main.ts", "src/preload.ts", "src/boot-preload.ts"],
   format: "esm",
   platform: "node",
   outDir: "lib",
