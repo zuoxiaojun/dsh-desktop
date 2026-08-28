@@ -37,6 +37,16 @@ cp -R "$APP_PATH" "$STAGING_DIR/"
 echo "   Copying 移除安全验证.command..."
 cp "$APP_DIR/resources/移除安全验证.command" "$STAGING_DIR/"
 
+# 重新进行 ad-hoc 深度签名（修复缺失/损坏的 bundle 签名）
+# electron-builder --dir 在无签名证书时只会给主程序做 linker-signed 的 ad-hoc 签名，
+# 不会生成 Contents/_CodeSignature/CodeResources。结果是 spctl 报
+# "code has no resources but signature indicates they must be present"（视为"已损坏"），
+# 删 quarantine 也救不回来，别的 Mac 上双击即报"app 已损坏，无法打开"。
+# 这里重新 --deep 广告式签名后，spctl 变为 "rejected"（未公证/未知开发者），
+# 配合移除安全验证.command 删掉 quarantine 即可在任意 Mac 上打开。
+echo "   Re-signing app bundle (ad-hoc, deep)..."
+codesign --force --deep --sign - "${STAGING_DIR}/${APP_NAME}.app"
+
 # 创建 Applications 链接
 ln -s /Applications "$STAGING_DIR/Applications"
 

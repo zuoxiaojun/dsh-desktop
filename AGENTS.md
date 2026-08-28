@@ -194,7 +194,7 @@ extraResources: [
 ]
 ```
 
-**macOS 特殊处理：** electron-builder 的 DMG 目标因 `@electron/get` 兼容性问题不可用，改由手写 `scripts/package-dmg.sh`（`hdiutil`）制作。
+**macOS 特殊处理：** electron-builder 的 DMG 目标因 `@electron/get` 兼容性问题不可用，改由手写 `scripts/package-dmg.sh`（`hdiutil`）制作。`package-dmg.sh` 会在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名（见 §9），否则别的 Mac 上会报「app 已损坏」。
 
 **`dist:*` 步骤顺序**（顺序很重要）：`prepare:dsh` → `build` → `electron-builder --dir` → `verify-app.sh` → `package-dmg.sh`。
 
@@ -244,6 +244,7 @@ dsh-desktop/
 ## 9. 已知问题
 
 - **代码签名**：未配置签名证书，macOS 会提示「无法验证开发者」，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过。
+  - 注意：`electron-builder --dir` 在无证书时只给主程序做 linker-signed 的 ad-hoc 签名，**不会**生成 `Contents/_CodeSignature`。这会导致 `spctl` 报「code has no resources but signature indicates they must be present」（视为"已损坏"），删 quarantine 救不回，别的机器双击即报「app 已损坏，无法打开」。因此 `package-dmg.sh` 在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名，使 `spctl` 变为"rejected/未公证"（可被删 quarantine 绕过）；`移除安全验证.command` 也会在签名缺失/无效时自动重签。
 - **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新。
 - **版本角标（已修复）**：`injectVersionBadge`（`main.ts`）改用 `document.createTextNode` 构建（避开 innerHTML），并在注入前把版本号用 `JSON.stringify` 序列化；保留 MutationObserver 自愈（SPA 导航移除后自动重渲染）与 `DSH_VERSION` 为空时只显示桌面版本一行；重注入时断开旧观察者，避免 SPA 长会话中观察者累积。注意：模板字符串中的 `${DESKTOP_VERSION}`/`${DSH_VERSION}` 在主进程作用域内被求值，注入渲染器的是实际值——旧的「显示为字面文本」判断不成立。
 
