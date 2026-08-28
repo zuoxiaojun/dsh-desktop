@@ -11,6 +11,7 @@ module.exports = {
     "lib/**",
     "package.json",
     "resources/icon.svg",
+    "resources/version.json",
     "build/icon.png",
     "!resources/dsh/**",
   ],

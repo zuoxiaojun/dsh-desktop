@@ -240,8 +240,8 @@ dsh-desktop/
 │   │   ├── dev-desktop.ts     # 开发启动器（指纹缓存 + 增量构建）
 │   │   ├── prepare-dsh.ts     # 打包 dsh 依赖
 │   │   └── package-dmg.sh     # macOS DMG 打包
-│   ├── resources/             # 图标
-│   ├── build/                 # 构建图标
+│   ├── resources/             # 图标、版本号、移除安全验证脚本
+│   ├── build/                 # 构建图标（icns/iconset/png）
 │   ├── electron-builder.config.cjs
 │   ├── tsdown.config.ts
 │   ├── tsconfig.json
