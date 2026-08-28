@@ -1,0 +1,23 @@
+{
+  "name": "llmwiki",
+  "version": "0.1.0",
+  "private": true,
+  "description": "面向企业资料的 LLM Wiki 工业知识库演示项目",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "predev": "pnpm --filter @llmwiki/contracts build",
+    "dev": "concurrently -n api,web -c cyan,magenta \"pnpm --filter @llmwiki/api dev\" \"pnpm --filter @llmwiki/web dev\"",
+    "build": "pnpm --filter @llmwiki/contracts build && pnpm --filter @llmwiki/api build && pnpm --filter @llmwiki/web build",
+    "typecheck": "pnpm --filter @llmwiki/contracts build && pnpm -r typecheck",
+    "test": "pnpm --filter @llmwiki/contracts build && pnpm -r test",
+    "wiki:compile": "pnpm --filter @llmwiki/api wiki:compile",
+    "graph:extract": "pnpm --filter @llmwiki/api graph:extract",
+    "eval:qa": "node scripts/eval-qa.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

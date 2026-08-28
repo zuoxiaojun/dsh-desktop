@@ -1,0 +1,564 @@
+{
+  "results": [
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：4 段 + 4 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 1,
+      "comment": "命中全部期望页（engineering-gateway-architecture）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：鉴权、限流、网关"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 4 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：2 段 + 2 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 1,
+      "comment": "命中全部期望页（engineering-release-flow）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：回滚、灰度"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 2 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：support-sla（实际命中 support-first-response-policy）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：时限、响应"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 1,
+      "comment": "命中全部期望页（security-incident-response）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：止损"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：operations-change-management, engineering-release-flow（实际命中 engineering-change-review）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：评审、回滚、窗口"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：support-sla（实际命中 product-sla-alignment）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：SLA、承诺、对齐"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：security-least-privilege（实际命中 security-access-control, security-info-classification）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：分级、最小权限、默认拒绝"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：product-roadmap-planning（实际命中 product-lifecycle）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：路线图、反馈、迭代"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：support-cross-dept-collab（实际命中 product-feedback-loop）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：需求池、迭代、闭环"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：security-incident-response（实际命中 security-monitoring）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：第一道信号、发现"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 0,
+      "comment": "未命中期望页：engineering-versioning-policy（实际命中 engineering-order-api）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：主版本号、版本"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：5 段 + 5 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 1,
+      "comment": "命中全部期望页（operations-backup-recovery）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 0,
+      "comment": "未覆盖关键词：恢复"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 5 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：answered"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "无证据诚实：answers/citations 均为空"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": null,
+      "comment": "不适用：非期望 answered 或无期望页"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": null,
+      "comment": "不适用：非期望 answered 或无语义关键词"
+    },
+    {
+      "key": "citation_valid",
+      "score": null,
+      "comment": "不适用：无引用可校验"
+    },
+    {
+      "key": "answer_faithful",
+      "score": null,
+      "comment": "不适用：无回答可核"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": 1,
+      "comment": "诚实标注 no_evidence，附 0 条可核查资料"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：no_evidence"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "无证据诚实：answers/citations 均为空"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": null,
+      "comment": "不适用：非期望 answered 或无期望页"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": null,
+      "comment": "不适用：非期望 answered 或无语义关键词"
+    },
+    {
+      "key": "citation_valid",
+      "score": null,
+      "comment": "不适用：无引用可校验"
+    },
+    {
+      "key": "answer_faithful",
+      "score": null,
+      "comment": "不适用：无回答可核"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": 1,
+      "comment": "诚实标注 no_evidence，附 0 条可核查资料"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "状态合法：no_evidence"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "回答完成：2 段 + 2 条引用"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": 1,
+      "comment": "命中全部期望页（engineering-gateway-architecture）"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": 1,
+      "comment": "覆盖期望语义：鉴权、网关"
+    },
+    {
+      "key": "citation_valid",
+      "score": 1,
+      "comment": "引用 2 条全部真实且可打开"
+    },
+    {
+      "key": "answer_faithful",
+      "score": 1,
+      "comment": "回答 [n] 角标与引用一一对账"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": null,
+      "comment": "不适用：本用例期望有答案"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "含噪口语仍稳健命中"
+    },
+    {
+      "key": "answer_completed",
+      "score": 1,
+      "comment": "无证据诚实：answers/citations 均为空"
+    },
+    {
+      "key": "retrieval_hit",
+      "score": null,
+      "comment": "不适用：非期望 answered 或无期望页"
+    },
+    {
+      "key": "evidence_coverage",
+      "score": null,
+      "comment": "不适用：非期望 answered 或无语义关键词"
+    },
+    {
+      "key": "citation_valid",
+      "score": null,
+      "comment": "不适用：无引用可校验"
+    },
+    {
+      "key": "answer_faithful",
+      "score": null,
+      "comment": "不适用：无回答可核"
+    },
+    {
+      "key": "no_answer_honest",
+      "score": 1,
+      "comment": "诚实标注 no_evidence，附 0 条可核查资料"
+    },
+    {
+      "key": "input_robust",
+      "score": 1,
+      "comment": "纯标点输入稳健落入 no_evidence"
+    }
+  ]
+}

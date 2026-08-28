@@ -1,0 +1,2774 @@
+{
+  "schemaVersion": 1,
+  "compiledAt": "2026-08-17T08:50:07.402Z",
+  "stats": {
+    "pages": 47,
+    "sourceCitations": 98,
+    "interlinks": 99,
+    "topicsCovered": 6,
+    "lastCompiledAt": "2026-08-17T08:50:07.402Z"
+  },
+  "types": [
+    {
+      "type": "concept",
+      "count": 14
+    },
+    {
+      "type": "system",
+      "count": 10
+    },
+    {
+      "type": "playbook",
+      "count": 11
+    },
+    {
+      "type": "policy",
+      "count": 12
+    }
+  ],
+  "sources": [
+    {
+      "path": "raw/engineering-gateway-arch.md",
+      "title": "系统架构设计说明书（网关服务）",
+      "topic": "engineering",
+      "department": "研发部",
+      "pageCount": 4
+    },
+    {
+      "path": "raw/engineering-order-api.md",
+      "title": "接口文档（订单中心 v1.8）",
+      "topic": "engineering",
+      "department": "研发部",
+      "pageCount": 5
+    },
+    {
+      "path": "raw/engineering-release.md",
+      "title": "发布与代码评审规范",
+      "topic": "engineering",
+      "department": "研发部",
+      "pageCount": 8
+    },
+    {
+      "path": "raw/hr-onboarding.md",
+      "title": "员工入职指引手册",
+      "topic": "hr",
+      "department": "人力资源部",
+      "pageCount": 4
+    },
+    {
+      "path": "raw/hr-performance.md",
+      "title": "绩效考核管理办法（2025）",
+      "topic": "hr",
+      "department": "人力资源部",
+      "pageCount": 4
+    },
+    {
+      "path": "raw/hr-training.md",
+      "title": "培训课程与晋升评审",
+      "topic": "hr",
+      "department": "人力资源部",
+      "pageCount": 6
+    },
+    {
+      "path": "raw/operations-change.md",
+      "title": "生产环境变更管理规范",
+      "topic": "operations",
+      "department": "运维部",
+      "pageCount": 6
+    },
+    {
+      "path": "raw/operations-inspection.md",
+      "title": "服务器巡检手册（每周点检）",
+      "topic": "operations",
+      "department": "运维部",
+      "pageCount": 4
+    },
+    {
+      "path": "raw/operations-monitor.md",
+      "title": "监控告警与故障复盘",
+      "topic": "operations",
+      "department": "运维部",
+      "pageCount": 7
+    },
+    {
+      "path": "raw/product-manual.md",
+      "title": "用户操作手册（v2.3）",
+      "topic": "product",
+      "department": "产品部",
+      "pageCount": 6
+    },
+    {
+      "path": "raw/product-prd.md",
+      "title": "产品需求说明书（2025 Q3）",
+      "topic": "product",
+      "department": "产品部",
+      "pageCount": 5
+    },
+    {
+      "path": "raw/product-roadmap.md",
+      "title": "产品路线图（2025）",
+      "topic": "product",
+      "department": "产品部",
+      "pageCount": 5
+    },
+    {
+      "path": "raw/security-access.md",
+      "title": "权限与合规管理",
+      "topic": "security",
+      "department": "安全部",
+      "pageCount": 5
+    },
+    {
+      "path": "raw/security-incident.md",
+      "title": "数据泄露应急预案",
+      "topic": "security",
+      "department": "安全部",
+      "pageCount": 5
+    },
+    {
+      "path": "raw/security-policy.md",
+      "title": "信息安全管理制度（2025 版）",
+      "topic": "security",
+      "department": "安全部",
+      "pageCount": 8
+    },
+    {
+      "path": "raw/support-complaint.md",
+      "title": "投诉处理流程与升级标准",
+      "topic": "support",
+      "department": "客服部",
+      "pageCount": 5
+    },
+    {
+      "path": "raw/support-script.md",
+      "title": "客服话术手册（常见问题处理）",
+      "topic": "support",
+      "department": "客服部",
+      "pageCount": 4
+    },
+    {
+      "path": "raw/support-sla.md",
+      "title": "服务 SLA 与满意度说明",
+      "topic": "support",
+      "department": "客服部",
+      "pageCount": 7
+    }
+  ],
+  "pages": [
+    {
+      "slug": "product-lifecycle",
+      "title": "产品生命周期管理",
+      "type": "concept",
+      "topic": "product",
+      "summary": "把产品从需求、规划、发布到反馈的完整生命周期纳入统一管理。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-prd.md",
+        "raw/product-roadmap.md"
+      ],
+      "conclusion": [
+        "产品的生命周期跨越需求、规划、研发、发布与客服反馈，任何一环脱节都会造成承诺与交付不一致。",
+        "路线图是生命周期的节奏来源，反馈闭环则让每次迭代都能修正方向。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-prd.md",
+          "title": "产品需求说明书（2025 Q3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个迭代必须有可验证的验收标准，验收标准随需求一起评审。",
+            "需求按「用户价值 × 实现成本 × 风险」三个维度做优先级排序。",
+            "产品承诺的能力必须与服务水平（SLA）对齐，避免过度承诺。",
+            "验收以「默认进入即装满」为底线，首屏不允许空白态。"
+          ]
+        },
+        {
+          "source": "raw/product-roadmap.md",
+          "title": "产品路线图（2025）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "路线图按主题组织版本，不把功能清单当路线图。",
+            "版本主题之间存在依赖，需在规划阶段显式标注。",
+            "排期策略要区分「必须做」「应该做」「暂不做」三档。",
+            "用户反馈与竞品变化是路线图调整的主要输入。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-requirements",
+          "title": "需求规格与验收标准",
+          "type": "concept"
+        },
+        {
+          "slug": "product-roadmap-planning",
+          "title": "路线图与迭代规划",
+          "type": "concept"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        },
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "product-requirements",
+      "title": "需求规格与验收标准",
+      "type": "concept",
+      "topic": "product",
+      "summary": "定义需求的表达方式与可验证的验收口径。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-prd.md",
+        "raw/product-manual.md"
+      ],
+      "conclusion": [
+        "需求必须以可验证的验收标准交付，评审时一并确认，避免研发与产品对「完成」理解不一致。",
+        "验收以默认装满为底线，任何导致首屏空白的交付都视为未完成。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-prd.md",
+          "title": "产品需求说明书（2025 Q3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个迭代必须有可验证的验收标准，验收标准随需求一起评审。",
+            "需求按「用户价值 × 实现成本 × 风险」三个维度做优先级排序。",
+            "产品承诺的能力必须与服务水平（SLA）对齐，避免过度承诺。",
+            "验收以「默认进入即装满」为底线，首屏不允许空白态。"
+          ]
+        },
+        {
+          "source": "raw/product-manual.md",
+          "title": "用户操作手册（v2.3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个功能的操作路径必须唯一且可复现，避免多入口造成认知负担。",
+            "常见问题（FAQ）要沉淀为可检索条目，减少重复人工答疑。",
+            "用户反馈应回流到需求池，形成「使用 → 反馈 → 迭代」闭环。",
+            "手册与产品承诺的服务水平保持一致，承诺能力必须可自助验证。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-lifecycle",
+          "title": "产品生命周期管理",
+          "type": "concept"
+        },
+        {
+          "slug": "engineering-order-api",
+          "title": "订单中心接口规范",
+          "type": "system"
+        },
+        {
+          "slug": "support-script-system",
+          "title": "客服话术知识库",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "product-roadmap-planning",
+      "title": "路线图与迭代规划",
+      "type": "concept",
+      "topic": "product",
+      "summary": "把战略意图拆解为可排期的版本主题与依赖关系。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-roadmap.md",
+        "raw/product-prd.md"
+      ],
+      "conclusion": [
+        "路线图按主题组织版本并显式标注依赖，而不是罗列功能清单。",
+        "排期区分必须做、应该做、暂不做三档，确保资源聚焦。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-roadmap.md",
+          "title": "产品路线图（2025）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "路线图按主题组织版本，不把功能清单当路线图。",
+            "版本主题之间存在依赖，需在规划阶段显式标注。",
+            "排期策略要区分「必须做」「应该做」「暂不做」三档。",
+            "用户反馈与竞品变化是路线图调整的主要输入。"
+          ]
+        },
+        {
+          "source": "raw/product-prd.md",
+          "title": "产品需求说明书（2025 Q3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个迭代必须有可验证的验收标准，验收标准随需求一起评审。",
+            "需求按「用户价值 × 实现成本 × 风险」三个维度做优先级排序。",
+            "产品承诺的能力必须与服务水平（SLA）对齐，避免过度承诺。",
+            "验收以「默认进入即装满」为底线，首屏不允许空白态。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-lifecycle",
+          "title": "产品生命周期管理",
+          "type": "concept"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "product-user-manual-system",
+      "title": "用户操作手册体系",
+      "type": "system",
+      "topic": "product",
+      "summary": "面向用户的功能说明与自助答疑的操作路径体系。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-manual.md",
+        "raw/support-script.md"
+      ],
+      "conclusion": [
+        "手册保证每个功能操作路径唯一可复现，并把高频问题沉淀为自助条目。",
+        "它与客服话术共享术语，是客服知识库的产品侧源头。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-manual.md",
+          "title": "用户操作手册（v2.3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个功能的操作路径必须唯一且可复现，避免多入口造成认知负担。",
+            "常见问题（FAQ）要沉淀为可检索条目，减少重复人工答疑。",
+            "用户反馈应回流到需求池，形成「使用 → 反馈 → 迭代」闭环。",
+            "手册与产品承诺的服务水平保持一致，承诺能力必须可自助验证。"
+          ]
+        },
+        {
+          "source": "raw/support-script.md",
+          "title": "客服话术手册（常见问题处理）",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "高频问题必须沉淀为标准话术，答复口径全团队统一。",
+            "话术以产品操作手册为上游依据，偏差即产品缺陷。",
+            "首次响应必须在约定时限内给出，不能「已记录」了之。",
+            "疑难问题按升级标准转交，不在一线反复空转。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-requirements",
+          "title": "需求规格与验收标准",
+          "type": "concept"
+        },
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "product-acceptance-playbook",
+      "title": "产品验收流程",
+      "type": "playbook",
+      "topic": "product",
+      "summary": "发布前按验收标准逐项核对、确认可交付的流程。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-prd.md",
+        "raw/engineering-release.md",
+        "raw/support-sla.md"
+      ],
+      "conclusion": [
+        "验收以需求说明书的验收标准为准，逐项核对后由产品与客服共同确认。",
+        "验收通过是进入发布流水线的前提，与服务承诺对齐后放行。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-prd.md",
+          "title": "产品需求说明书（2025 Q3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个迭代必须有可验证的验收标准，验收标准随需求一起评审。",
+            "需求按「用户价值 × 实现成本 × 风险」三个维度做优先级排序。",
+            "产品承诺的能力必须与服务水平（SLA）对齐，避免过度承诺。",
+            "验收以「默认进入即装满」为底线，首屏不允许空白态。"
+          ]
+        },
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        },
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-requirements",
+          "title": "需求规格与验收标准",
+          "type": "concept"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "product-backlog-policy",
+      "title": "需求优先级与排期策略",
+      "type": "policy",
+      "topic": "product",
+      "summary": "用统一维度给需求排序并约束排期决策。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-roadmap.md",
+        "raw/product-prd.md"
+      ],
+      "conclusion": [
+        "需求按用户价值、实现成本、风险三个维度统一排序，避免拍脑袋排期。",
+        "排期策略与路线图主题对齐，保证每期交付聚焦。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-roadmap.md",
+          "title": "产品路线图（2025）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "路线图按主题组织版本，不把功能清单当路线图。",
+            "版本主题之间存在依赖，需在规划阶段显式标注。",
+            "排期策略要区分「必须做」「应该做」「暂不做」三档。",
+            "用户反馈与竞品变化是路线图调整的主要输入。"
+          ]
+        },
+        {
+          "source": "raw/product-prd.md",
+          "title": "产品需求说明书（2025 Q3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个迭代必须有可验证的验收标准，验收标准随需求一起评审。",
+            "需求按「用户价值 × 实现成本 × 风险」三个维度做优先级排序。",
+            "产品承诺的能力必须与服务水平（SLA）对齐，避免过度承诺。",
+            "验收以「默认进入即装满」为底线，首屏不允许空白态。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-roadmap-planning",
+          "title": "路线图与迭代规划",
+          "type": "concept"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "product-sla-alignment",
+      "title": "产品承诺与服务水平对齐",
+      "type": "concept",
+      "topic": "product",
+      "summary": "产品对外承诺的能力必须与 SLA 一致。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-manual.md",
+        "raw/support-sla.md"
+      ],
+      "conclusion": [
+        "产品手册中承诺的能力必须能在约定时限内兑现，否则就是不诚实的承诺。",
+        "SLA 一旦变化，手册与话术需同步更新。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-manual.md",
+          "title": "用户操作手册（v2.3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个功能的操作路径必须唯一且可复现，避免多入口造成认知负担。",
+            "常见问题（FAQ）要沉淀为可检索条目，减少重复人工答疑。",
+            "用户反馈应回流到需求池，形成「使用 → 反馈 → 迭代」闭环。",
+            "手册与产品承诺的服务水平保持一致，承诺能力必须可自助验证。"
+          ]
+        },
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-user-manual-system",
+          "title": "用户操作手册体系",
+          "type": "system"
+        },
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "product-feedback-loop",
+      "title": "产品反馈闭环",
+      "type": "system",
+      "topic": "product",
+      "summary": "把用户反馈与投诉回流到需求池并驱动迭代的机制。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/product-manual.md",
+        "raw/support-complaint.md",
+        "raw/product-roadmap.md"
+      ],
+      "conclusion": [
+        "用户反馈与投诉根因必须回流到需求池，成为路线图调整的输入。",
+        "闭环的终点是下一次迭代的规划，而不是停留在客服工单里。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/product-manual.md",
+          "title": "用户操作手册（v2.3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个功能的操作路径必须唯一且可复现，避免多入口造成认知负担。",
+            "常见问题（FAQ）要沉淀为可检索条目，减少重复人工答疑。",
+            "用户反馈应回流到需求池，形成「使用 → 反馈 → 迭代」闭环。",
+            "手册与产品承诺的服务水平保持一致，承诺能力必须可自助验证。"
+          ]
+        },
+        {
+          "source": "raw/support-complaint.md",
+          "title": "投诉处理流程与升级标准",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "投诉按影响程度分级，高等级投诉立即升级而非层层转手。",
+            "升级需跨部门协同，明确责任人与时限。",
+            "投诉根因必须回流产品与研发，形成反馈闭环。",
+            "满意度指标是投诉处理效果的核心度量。"
+          ]
+        },
+        {
+          "source": "raw/product-roadmap.md",
+          "title": "产品路线图（2025）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "路线图按主题组织版本，不把功能清单当路线图。",
+            "版本主题之间存在依赖，需在规划阶段显式标注。",
+            "排期策略要区分「必须做」「应该做」「暂不做」三档。",
+            "用户反馈与竞品变化是路线图调整的主要输入。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-roadmap-planning",
+          "title": "路线图与迭代规划",
+          "type": "concept"
+        },
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-gateway-architecture",
+      "title": "网关服务架构",
+      "type": "system",
+      "topic": "engineering",
+      "summary": "统一入口的鉴权、限流与可观测性边界。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-gateway-arch.md",
+        "raw/engineering-order-api.md"
+      ],
+      "conclusion": [
+        "网关是统一鉴权与限流的边界，业务服务不重复实现鉴权。",
+        "每个对外接口都具备日志、指标、追踪三件套，保证问题可定位。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-gateway-arch.md",
+          "title": "系统架构设计说明书（网关服务）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "网关是统一鉴权与限流的边界，业务服务不重复实现鉴权。",
+            "每个对外接口都要具备可观测性：日志、指标、追踪三者齐全。",
+            "架构演进需显式标注技术债，避免「能跑」掩盖「难维护」。",
+            "接口鉴权遵循最小权限，只暴露业务必需的能力。"
+          ]
+        },
+        {
+          "source": "raw/engineering-order-api.md",
+          "title": "接口文档（订单中心 v1.8）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "接口以版本化契约交付，破坏性变更必须升级主版本号。",
+            "鉴权下沉到网关，业务侧只做细粒度权限校验。",
+            "对外接口必须同时提供错误码与幂等语义。",
+            "联调以文档为准，口头约定一律无效。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "engineering-order-api",
+          "title": "订单中心接口规范",
+          "type": "system"
+        },
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        },
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-order-api",
+      "title": "订单中心接口规范",
+      "type": "system",
+      "topic": "engineering",
+      "summary": "订单中心对外接口的契约、版本与幂等语义。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-order-api.md",
+        "raw/engineering-gateway-arch.md"
+      ],
+      "conclusion": [
+        "接口以版本化契约交付，破坏性变更必须升级主版本号。",
+        "鉴权下沉到网关，业务侧只做细粒度权限校验。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-order-api.md",
+          "title": "接口文档（订单中心 v1.8）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "接口以版本化契约交付，破坏性变更必须升级主版本号。",
+            "鉴权下沉到网关，业务侧只做细粒度权限校验。",
+            "对外接口必须同时提供错误码与幂等语义。",
+            "联调以文档为准，口头约定一律无效。"
+          ]
+        },
+        {
+          "source": "raw/engineering-gateway-arch.md",
+          "title": "系统架构设计说明书（网关服务）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "网关是统一鉴权与限流的边界，业务服务不重复实现鉴权。",
+            "每个对外接口都要具备可观测性：日志、指标、追踪三者齐全。",
+            "架构演进需显式标注技术债，避免「能跑」掩盖「难维护」。",
+            "接口鉴权遵循最小权限，只暴露业务必需的能力。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "engineering-gateway-architecture",
+          "title": "网关服务架构",
+          "type": "system"
+        },
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-release-flow",
+      "title": "发布流程与代码评审",
+      "type": "playbook",
+      "topic": "engineering",
+      "summary": "从代码评审到灰度发布的交付门禁。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-release.md",
+        "raw/operations-change.md"
+      ],
+      "conclusion": [
+        "所有代码变更必须通过评审门禁，未评审不得合入主干。",
+        "发布采用灰度策略，异常时优先回滚而非现场修复。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        },
+        {
+          "source": "raw/operations-change.md",
+          "title": "生产环境变更管理规范",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "生产变更必须先申请、评审，禁止直接改生产。",
+            "变更必须落在既定窗口内执行，避开服务高峰。",
+            "每个变更都要有回滚方案，异常时先回滚。",
+            "变更后持续观察监控指标，确认无异常再关闭。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "product-acceptance-playbook",
+          "title": "产品验收流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-versioning-policy",
+      "title": "版本与兼容性策略",
+      "type": "policy",
+      "topic": "engineering",
+      "summary": "接口与版本的兼容性约束。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-order-api.md",
+        "raw/engineering-release.md"
+      ],
+      "conclusion": [
+        "破坏性变更必须升级主版本号，兼容变更可沿用次版本。",
+        "联调以文档为准，口头约定无效，避免版本漂移。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-order-api.md",
+          "title": "接口文档（订单中心 v1.8）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "接口以版本化契约交付，破坏性变更必须升级主版本号。",
+            "鉴权下沉到网关，业务侧只做细粒度权限校验。",
+            "对外接口必须同时提供错误码与幂等语义。",
+            "联调以文档为准，口头约定一律无效。"
+          ]
+        },
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "engineering-order-api",
+          "title": "订单中心接口规范",
+          "type": "system"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-observability",
+      "title": "可观测性设计",
+      "type": "concept",
+      "topic": "engineering",
+      "summary": "日志、指标、追踪三者齐全的观测能力。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-gateway-arch.md",
+        "raw/operations-monitor.md"
+      ],
+      "conclusion": [
+        "可观测性从设计阶段就要预留，而不是线上排障时才补。",
+        "监控指标是可观测性的运行时载体，与运维告警体系直接衔接。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-gateway-arch.md",
+          "title": "系统架构设计说明书（网关服务）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "网关是统一鉴权与限流的边界，业务服务不重复实现鉴权。",
+            "每个对外接口都要具备可观测性：日志、指标、追踪三者齐全。",
+            "架构演进需显式标注技术债，避免「能跑」掩盖「难维护」。",
+            "接口鉴权遵循最小权限，只暴露业务必需的能力。"
+          ]
+        },
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        },
+        {
+          "slug": "engineering-gateway-architecture",
+          "title": "网关服务架构",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-api-security",
+      "title": "接口安全与鉴权",
+      "type": "concept",
+      "topic": "engineering",
+      "summary": "接口鉴权下沉与最小权限的实践。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-order-api.md",
+        "raw/security-access.md"
+      ],
+      "conclusion": [
+        "接口鉴权由网关统一完成，业务侧只校验细粒度权限。",
+        "最小权限原则贯穿接口设计，只暴露业务必需的能力。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-order-api.md",
+          "title": "接口文档（订单中心 v1.8）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "接口以版本化契约交付，破坏性变更必须升级主版本号。",
+            "鉴权下沉到网关，业务侧只做细粒度权限校验。",
+            "对外接口必须同时提供错误码与幂等语义。",
+            "联调以文档为准，口头约定一律无效。"
+          ]
+        },
+        {
+          "source": "raw/security-access.md",
+          "title": "权限与合规管理",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "权限授予遵循最小权限，默认拒绝、按需授权。",
+            "账号权限定期复核，离岗必须及时回收。",
+            "合规审计以授权记录与日志为证据。",
+            "接口鉴权同样遵循最小权限，只暴露必需能力。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        },
+        {
+          "slug": "engineering-gateway-architecture",
+          "title": "网关服务架构",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-change-review",
+      "title": "变更评审流程",
+      "type": "playbook",
+      "topic": "engineering",
+      "summary": "把生产变更纳入评审门禁的执行流程。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-release.md",
+        "raw/operations-change.md",
+        "raw/security-policy.md"
+      ],
+      "conclusion": [
+        "生产变更必须经过评审与变更管理，禁止手工直改生产。",
+        "评审记录技术债与风险，为后续演进留痕。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        },
+        {
+          "source": "raw/operations-change.md",
+          "title": "生产环境变更管理规范",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "生产变更必须先申请、评审，禁止直接改生产。",
+            "变更必须落在既定窗口内执行，避开服务高峰。",
+            "每个变更都要有回滚方案，异常时先回滚。",
+            "变更后持续观察监控指标，确认无异常再关闭。"
+          ]
+        },
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-cicd-system",
+      "title": "持续集成与发布系统",
+      "type": "system",
+      "topic": "engineering",
+      "summary": "自动化构建、测试与发布的流水线。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-release.md",
+        "raw/operations-change.md"
+      ],
+      "conclusion": [
+        "持续集成把评审门禁自动化为流水线卡点，减少人工疏漏。",
+        "发布系统与变更窗口联动，保证变更可回滚、可追踪。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        },
+        {
+          "source": "raw/operations-change.md",
+          "title": "生产环境变更管理规范",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "生产变更必须先申请、评审，禁止直接改生产。",
+            "变更必须落在既定窗口内执行，避开服务高峰。",
+            "每个变更都要有回滚方案，异常时先回滚。",
+            "变更后持续观察监控指标，确认无异常再关闭。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        },
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-tech-debt-policy",
+      "title": "技术债治理策略",
+      "type": "policy",
+      "topic": "engineering",
+      "summary": "在评审与演进中显式记录并偿还技术债。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/engineering-release.md",
+        "raw/engineering-gateway-arch.md"
+      ],
+      "conclusion": [
+        "技术债必须在评审中显式记录，不能「能跑」就掩盖「难维护」。",
+        "版本演进时同步偿还高成本技术债，避免无限期累积。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        },
+        {
+          "source": "raw/engineering-gateway-arch.md",
+          "title": "系统架构设计说明书（网关服务）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "网关是统一鉴权与限流的边界，业务服务不重复实现鉴权。",
+            "每个对外接口都要具备可观测性：日志、指标、追踪三者齐全。",
+            "架构演进需显式标注技术债，避免「能跑」掩盖「难维护」。",
+            "接口鉴权遵循最小权限，只暴露业务必需的能力。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        },
+        {
+          "slug": "engineering-versioning-policy",
+          "title": "版本与兼容性策略",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "support-ticket-flow",
+      "title": "工单处理流程",
+      "type": "playbook",
+      "topic": "support",
+      "summary": "工单从受理到闭环的标准流程。",
+      "updated": "2025-08-14",
+      "sources": [
+        "raw/support-script.md",
+        "raw/support-complaint.md"
+      ],
+      "conclusion": [
+        "工单按话术手册分类，首次响应在约定时限内给出。",
+        "疑难工单按升级标准转交，不在同一层级空转。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-script.md",
+          "title": "客服话术手册（常见问题处理）",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "高频问题必须沉淀为标准话术，答复口径全团队统一。",
+            "话术以产品操作手册为上游依据，偏差即产品缺陷。",
+            "首次响应必须在约定时限内给出，不能「已记录」了之。",
+            "疑难问题按升级标准转交，不在一线反复空转。"
+          ]
+        },
+        {
+          "source": "raw/support-complaint.md",
+          "title": "投诉处理流程与升级标准",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "投诉按影响程度分级，高等级投诉立即升级而非层层转手。",
+            "升级需跨部门协同，明确责任人与时限。",
+            "投诉根因必须回流产品与研发，形成反馈闭环。",
+            "满意度指标是投诉处理效果的核心度量。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        },
+        {
+          "slug": "support-complaint-escalation",
+          "title": "投诉升级标准",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "support-complaint-escalation",
+      "title": "投诉升级标准",
+      "type": "playbook",
+      "topic": "support",
+      "summary": "投诉分级与跨部门升级的处置标准。",
+      "updated": "2025-08-14",
+      "sources": [
+        "raw/support-complaint.md",
+        "raw/support-sla.md"
+      ],
+      "conclusion": [
+        "投诉按影响程度分级，高等级投诉立即升级到跨部门协同。",
+        "升级后明确责任人与时限，避免层层转手。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-complaint.md",
+          "title": "投诉处理流程与升级标准",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "投诉按影响程度分级，高等级投诉立即升级而非层层转手。",
+            "升级需跨部门协同，明确责任人与时限。",
+            "投诉根因必须回流产品与研发，形成反馈闭环。",
+            "满意度指标是投诉处理效果的核心度量。"
+          ]
+        },
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "support-ticket-flow",
+          "title": "工单处理流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "support-sla",
+      "title": "服务等级协议",
+      "type": "policy",
+      "topic": "support",
+      "summary": "响应时限与解决时限的量化承诺。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/support-sla.md",
+        "raw/product-manual.md"
+      ],
+      "conclusion": [
+        "SLA 分别定义首次响应时限与解决时限并量化考核。",
+        "SLA 承诺与产品能力对齐，避免过度承诺。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        },
+        {
+          "source": "raw/product-manual.md",
+          "title": "用户操作手册（v2.3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个功能的操作路径必须唯一且可复现，避免多入口造成认知负担。",
+            "常见问题（FAQ）要沉淀为可检索条目，减少重复人工答疑。",
+            "用户反馈应回流到需求池，形成「使用 → 反馈 → 迭代」闭环。",
+            "手册与产品承诺的服务水平保持一致，承诺能力必须可自助验证。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-sla-alignment",
+          "title": "产品承诺与服务水平对齐",
+          "type": "concept"
+        },
+        {
+          "slug": "support-ticket-flow",
+          "title": "工单处理流程",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "support-script-system",
+      "title": "客服话术知识库",
+      "type": "system",
+      "topic": "support",
+      "summary": "标准答复口径的统一沉淀与检索。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/support-script.md",
+        "raw/product-manual.md"
+      ],
+      "conclusion": [
+        "高频问题沉淀为标准话术，答复口径全团队统一。",
+        "话术以产品操作手册为上游依据，产品变化时同步更新。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-script.md",
+          "title": "客服话术手册（常见问题处理）",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "高频问题必须沉淀为标准话术，答复口径全团队统一。",
+            "话术以产品操作手册为上游依据，偏差即产品缺陷。",
+            "首次响应必须在约定时限内给出，不能「已记录」了之。",
+            "疑难问题按升级标准转交，不在一线反复空转。"
+          ]
+        },
+        {
+          "source": "raw/product-manual.md",
+          "title": "用户操作手册（v2.3）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "每个功能的操作路径必须唯一且可复现，避免多入口造成认知负担。",
+            "常见问题（FAQ）要沉淀为可检索条目，减少重复人工答疑。",
+            "用户反馈应回流到需求池，形成「使用 → 反馈 → 迭代」闭环。",
+            "手册与产品承诺的服务水平保持一致，承诺能力必须可自助验证。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-user-manual-system",
+          "title": "用户操作手册体系",
+          "type": "system"
+        },
+        {
+          "slug": "support-ticket-flow",
+          "title": "工单处理流程",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "support-satisfaction-metric",
+      "title": "满意度度量体系",
+      "type": "concept",
+      "topic": "support",
+      "summary": "用满意度量化服务质量并回溯根因。",
+      "updated": "2025-08-14",
+      "sources": [
+        "raw/support-sla.md",
+        "raw/support-complaint.md"
+      ],
+      "conclusion": [
+        "满意度按工单抽样度量，低分样本必须回溯根因。",
+        "满意度是投诉处理效果的核心度量指标。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        },
+        {
+          "source": "raw/support-complaint.md",
+          "title": "投诉处理流程与升级标准",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "投诉按影响程度分级，高等级投诉立即升级而非层层转手。",
+            "升级需跨部门协同，明确责任人与时限。",
+            "投诉根因必须回流产品与研发，形成反馈闭环。",
+            "满意度指标是投诉处理效果的核心度量。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        },
+        {
+          "slug": "support-complaint-escalation",
+          "title": "投诉升级标准",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "support-first-response-policy",
+      "title": "首次响应时限策略",
+      "type": "policy",
+      "topic": "support",
+      "summary": "首次响应时限的约束与考核。",
+      "updated": "2025-08-14",
+      "sources": [
+        "raw/support-sla.md",
+        "raw/support-script.md"
+      ],
+      "conclusion": [
+        "首次响应必须在约定时限内给出，不能以「已记录」敷衍。",
+        "时限按工单等级区分，与 SLA 保持一致。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        },
+        {
+          "source": "raw/support-script.md",
+          "title": "客服话术手册（常见问题处理）",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "高频问题必须沉淀为标准话术，答复口径全团队统一。",
+            "话术以产品操作手册为上游依据，偏差即产品缺陷。",
+            "首次响应必须在约定时限内给出，不能「已记录」了之。",
+            "疑难问题按升级标准转交，不在一线反复空转。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        },
+        {
+          "slug": "support-ticket-flow",
+          "title": "工单处理流程",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "support-cross-dept-collab",
+      "title": "跨部门协作处置",
+      "type": "concept",
+      "topic": "support",
+      "summary": "客服问题跨产品、研发协作的机制。",
+      "updated": "2025-08-16",
+      "sources": [
+        "raw/support-complaint.md",
+        "raw/engineering-release.md",
+        "raw/product-roadmap.md"
+      ],
+      "conclusion": [
+        "投诉根因需跨产品与研发协作才能闭环，客服单方面无法解决。",
+        "反馈闭环把问题回流到需求池与发布流程，从源头修复。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/support-complaint.md",
+          "title": "投诉处理流程与升级标准",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "投诉按影响程度分级，高等级投诉立即升级而非层层转手。",
+            "升级需跨部门协同，明确责任人与时限。",
+            "投诉根因必须回流产品与研发，形成反馈闭环。",
+            "满意度指标是投诉处理效果的核心度量。"
+          ]
+        },
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        },
+        {
+          "source": "raw/product-roadmap.md",
+          "title": "产品路线图（2025）",
+          "topic": "product",
+          "department": "产品部",
+          "points": [
+            "路线图按主题组织版本，不把功能清单当路线图。",
+            "版本主题之间存在依赖，需在规划阶段显式标注。",
+            "排期策略要区分「必须做」「应该做」「暂不做」三档。",
+            "用户反馈与竞品变化是路线图调整的主要输入。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "product-feedback-loop",
+          "title": "产品反馈闭环",
+          "type": "system"
+        },
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "security-info-classification",
+      "title": "信息分级与保护",
+      "type": "concept",
+      "topic": "security",
+      "summary": "按敏感程度分级并匹配保护强度。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-policy.md",
+        "raw/security-access.md"
+      ],
+      "conclusion": [
+        "信息分级是保护强度的前提，敏感度决定访问范围与保留策略。",
+        "分级结果是访问控制与数据保留的上游依据。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        },
+        {
+          "source": "raw/security-access.md",
+          "title": "权限与合规管理",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "权限授予遵循最小权限，默认拒绝、按需授权。",
+            "账号权限定期复核，离岗必须及时回收。",
+            "合规审计以授权记录与日志为证据。",
+            "接口鉴权同样遵循最小权限，只暴露必需能力。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        },
+        {
+          "slug": "security-compliance-audit",
+          "title": "合规与审计",
+          "type": "concept"
+        }
+      ]
+    },
+    {
+      "slug": "security-access-control",
+      "title": "访问控制与权限策略",
+      "type": "policy",
+      "topic": "security",
+      "summary": "最小权限与默认拒绝的访问控制。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-access.md",
+        "raw/security-policy.md"
+      ],
+      "conclusion": [
+        "访问控制遵循最小权限，默认拒绝、按需授权。",
+        "权限定期复核，离岗及时回收，避免权限膨胀。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-access.md",
+          "title": "权限与合规管理",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "权限授予遵循最小权限，默认拒绝、按需授权。",
+            "账号权限定期复核，离岗必须及时回收。",
+            "合规审计以授权记录与日志为证据。",
+            "接口鉴权同样遵循最小权限，只暴露必需能力。"
+          ]
+        },
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-info-classification",
+          "title": "信息分级与保护",
+          "type": "concept"
+        },
+        {
+          "slug": "engineering-api-security",
+          "title": "接口安全与鉴权",
+          "type": "concept"
+        }
+      ]
+    },
+    {
+      "slug": "security-incident-response",
+      "title": "数据泄露应急响应",
+      "type": "playbook",
+      "topic": "security",
+      "summary": "数据泄露事件的止损、溯源与复盘。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-incident.md",
+        "raw/security-policy.md"
+      ],
+      "conclusion": [
+        "事件响应先止损、再溯源、后复盘，全程记录时间线。",
+        "监控告警是发现泄露的第一道信号。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-incident.md",
+          "title": "数据泄露应急预案",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "事件响应先止损、再溯源、后复盘，避免扩大影响。",
+            "安全监控与告警是泄露发现的第一道信号。",
+            "泄露后必须复盘并更新数据保留与销毁策略。",
+            "响应过程全程记录时间线，供合规审计追溯。"
+          ]
+        },
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-compliance-audit",
+          "title": "合规与审计",
+          "type": "concept"
+        },
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "security-compliance-audit",
+      "title": "合规与审计",
+      "type": "concept",
+      "topic": "security",
+      "summary": "以授权记录与日志为证据的合规审计。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-policy.md",
+        "raw/security-access.md"
+      ],
+      "conclusion": [
+        "合规审计以授权记录与日志为证据，是常态动作而非应付检查。",
+        "审计结果反哺访问控制与分级策略的修正。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        },
+        {
+          "source": "raw/security-access.md",
+          "title": "权限与合规管理",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "权限授予遵循最小权限，默认拒绝、按需授权。",
+            "账号权限定期复核，离岗必须及时回收。",
+            "合规审计以授权记录与日志为证据。",
+            "接口鉴权同样遵循最小权限，只暴露必需能力。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        },
+        {
+          "slug": "security-info-classification",
+          "title": "信息分级与保护",
+          "type": "concept"
+        }
+      ]
+    },
+    {
+      "slug": "security-least-privilege",
+      "title": "最小权限原则",
+      "type": "policy",
+      "topic": "security",
+      "summary": "只授予完成职责所需的最小权限。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/security-access.md",
+        "raw/engineering-order-api.md"
+      ],
+      "conclusion": [
+        "最小权限适用于账号与接口两层，默认拒绝、按需授权。",
+        "接口鉴权同样只暴露业务必需能力，减少攻击面。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-access.md",
+          "title": "权限与合规管理",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "权限授予遵循最小权限，默认拒绝、按需授权。",
+            "账号权限定期复核，离岗必须及时回收。",
+            "合规审计以授权记录与日志为证据。",
+            "接口鉴权同样遵循最小权限，只暴露必需能力。"
+          ]
+        },
+        {
+          "source": "raw/engineering-order-api.md",
+          "title": "接口文档（订单中心 v1.8）",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "接口以版本化契约交付，破坏性变更必须升级主版本号。",
+            "鉴权下沉到网关，业务侧只做细粒度权限校验。",
+            "对外接口必须同时提供错误码与幂等语义。",
+            "联调以文档为准，口头约定一律无效。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-access-control",
+          "title": "访问控制与权限策略",
+          "type": "policy"
+        },
+        {
+          "slug": "engineering-api-security",
+          "title": "接口安全与鉴权",
+          "type": "concept"
+        }
+      ]
+    },
+    {
+      "slug": "security-monitoring",
+      "title": "安全监控与告警",
+      "type": "system",
+      "topic": "security",
+      "summary": "安全事件的发现与告警联动。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-incident.md",
+        "raw/operations-monitor.md"
+      ],
+      "conclusion": [
+        "安全监控与运维告警联动，是数据泄露发现的第一道信号。",
+        "告警分级处置，保证安全事件在约定时限内被响应。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-incident.md",
+          "title": "数据泄露应急预案",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "事件响应先止损、再溯源、后复盘，避免扩大影响。",
+            "安全监控与告警是泄露发现的第一道信号。",
+            "泄露后必须复盘并更新数据保留与销毁策略。",
+            "响应过程全程记录时间线，供合规审计追溯。"
+          ]
+        },
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        },
+        {
+          "slug": "security-incident-response",
+          "title": "数据泄露应急响应",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "security-training-awareness",
+      "title": "安全培训与意识",
+      "type": "playbook",
+      "topic": "security",
+      "summary": "全员安全意识培训的落地。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-policy.md",
+        "raw/hr-training.md"
+      ],
+      "conclusion": [
+        "安全培训是全员必修项，不因岗位豁免。",
+        "培训与入职流程衔接，底线要求前置传递。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        },
+        {
+          "source": "raw/hr-training.md",
+          "title": "培训课程与晋升评审",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "培训课程按能力阶梯设计，覆盖岗位全周期。",
+            "晋升评审以绩效与能力双重证据为依据。",
+            "安全培训是全员必修项，不因岗位豁免。",
+            "招聘标准与能力标准对齐，保证入口质量。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-training-system",
+          "title": "培训体系",
+          "type": "system"
+        },
+        {
+          "slug": "security-info-classification",
+          "title": "信息分级与保护",
+          "type": "concept"
+        }
+      ]
+    },
+    {
+      "slug": "security-data-retention",
+      "title": "数据保留与销毁策略",
+      "type": "policy",
+      "topic": "security",
+      "summary": "数据保留周期与泄露后的策略更新。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/security-policy.md",
+        "raw/security-incident.md"
+      ],
+      "conclusion": [
+        "数据按分级确定保留周期，过期及时销毁。",
+        "泄露事件后复盘并更新保留与销毁策略。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        },
+        {
+          "source": "raw/security-incident.md",
+          "title": "数据泄露应急预案",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "事件响应先止损、再溯源、后复盘，避免扩大影响。",
+            "安全监控与告警是泄露发现的第一道信号。",
+            "泄露后必须复盘并更新数据保留与销毁策略。",
+            "响应过程全程记录时间线，供合规审计追溯。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-info-classification",
+          "title": "信息分级与保护",
+          "type": "concept"
+        },
+        {
+          "slug": "security-incident-response",
+          "title": "数据泄露应急响应",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "operations-change-management",
+      "title": "变更管理流程",
+      "type": "playbook",
+      "topic": "operations",
+      "summary": "生产变更的申请、评审、执行与回滚。",
+      "updated": "2025-08-15",
+      "sources": [
+        "raw/operations-change.md",
+        "raw/engineering-release.md"
+      ],
+      "conclusion": [
+        "生产变更必须先申请、评审，禁止直接改生产。",
+        "每个变更都有回滚方案，异常时先回滚。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-change.md",
+          "title": "生产环境变更管理规范",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "生产变更必须先申请、评审，禁止直接改生产。",
+            "变更必须落在既定窗口内执行，避开服务高峰。",
+            "每个变更都要有回滚方案，异常时先回滚。",
+            "变更后持续观察监控指标，确认无异常再关闭。"
+          ]
+        },
+        {
+          "source": "raw/engineering-release.md",
+          "title": "发布与代码评审规范",
+          "topic": "engineering",
+          "department": "研发部",
+          "points": [
+            "所有代码变更必须通过评审门禁，未评审代码不得合入主干。",
+            "发布采用灰度策略，异常时优先回滚而非现场修复。",
+            "生产变更与发布窗口统一走变更管理流程。",
+            "技术债要在评审中显式记录，避免无限期累积。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "engineering-release-flow",
+          "title": "发布流程与代码评审",
+          "type": "playbook"
+        },
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "operations-inspection-routine",
+      "title": "服务器巡检规范",
+      "type": "playbook",
+      "topic": "operations",
+      "summary": "每周巡检的检查项与异常处置。",
+      "updated": "2025-08-12",
+      "sources": [
+        "raw/operations-inspection.md",
+        "raw/operations-monitor.md"
+      ],
+      "conclusion": [
+        "巡检覆盖资源、进程、日志维度，异常项进入工单跟踪。",
+        "巡检与监控告警联动，形成隐患闭环。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-inspection.md",
+          "title": "服务器巡检手册（每周点检）",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "巡检覆盖资源、进程、日志等维度，异常项进入工单跟踪。",
+            "巡检结果与监控告警联动，形成隐患闭环。",
+            "容量水位是巡检重点，逼近阈值时提前扩容。",
+            "备份有效性需在巡检中验证，不能只看备份任务是否成功。"
+          ]
+        },
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        },
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "operations-monitoring-alerting",
+      "title": "监控告警体系",
+      "type": "system",
+      "topic": "operations",
+      "summary": "关键指标采集与告警分级。",
+      "updated": "2025-08-12",
+      "sources": [
+        "raw/operations-monitor.md",
+        "raw/operations-inspection.md"
+      ],
+      "conclusion": [
+        "关键指标全覆盖，告警按严重程度分级处置。",
+        "监控数据是容量规划与故障复盘的数据基础。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        },
+        {
+          "source": "raw/operations-inspection.md",
+          "title": "服务器巡检手册（每周点检）",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "巡检覆盖资源、进程、日志等维度，异常项进入工单跟踪。",
+            "巡检结果与监控告警联动，形成隐患闭环。",
+            "容量水位是巡检重点，逼近阈值时提前扩容。",
+            "备份有效性需在巡检中验证，不能只看备份任务是否成功。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-inspection-routine",
+          "title": "服务器巡检规范",
+          "type": "playbook"
+        },
+        {
+          "slug": "security-monitoring",
+          "title": "安全监控与告警",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "operations-incident-review",
+      "title": "故障复盘方法",
+      "type": "concept",
+      "topic": "operations",
+      "summary": "故障后沉淀改进项的复盘方法。",
+      "updated": "2025-08-12",
+      "sources": [
+        "raw/operations-monitor.md",
+        "raw/operations-change.md"
+      ],
+      "conclusion": [
+        "故障后必须复盘，沉淀可执行的改进项而非止于追责。",
+        "复盘结论回流到变更与巡检流程，防止同类问题复发。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        },
+        {
+          "source": "raw/operations-change.md",
+          "title": "生产环境变更管理规范",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "生产变更必须先申请、评审，禁止直接改生产。",
+            "变更必须落在既定窗口内执行，避开服务高峰。",
+            "每个变更都要有回滚方案，异常时先回滚。",
+            "变更后持续观察监控指标，确认无异常再关闭。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "operations-capacity-planning",
+      "title": "容量规划",
+      "type": "concept",
+      "topic": "operations",
+      "summary": "基于监控数据的容量预估与扩容。",
+      "updated": "2025-08-12",
+      "sources": [
+        "raw/operations-monitor.md",
+        "raw/operations-inspection.md"
+      ],
+      "conclusion": [
+        "容量规划依赖长期监控数据，逼近阈值时提前扩容。",
+        "巡检中的水位检查是容量规划的前置信号。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        },
+        {
+          "source": "raw/operations-inspection.md",
+          "title": "服务器巡检手册（每周点检）",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "巡检覆盖资源、进程、日志等维度，异常项进入工单跟踪。",
+            "巡检结果与监控告警联动，形成隐患闭环。",
+            "容量水位是巡检重点，逼近阈值时提前扩容。",
+            "备份有效性需在巡检中验证，不能只看备份任务是否成功。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        },
+        {
+          "slug": "engineering-gateway-architecture",
+          "title": "网关服务架构",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "operations-oncall-policy",
+      "title": "值班与响应策略",
+      "type": "policy",
+      "topic": "operations",
+      "summary": "告警响应的值班安排与时限。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/operations-monitor.md",
+        "raw/security-incident.md"
+      ],
+      "conclusion": [
+        "值班要保证告警在约定时限内被处理，不能无人认领。",
+        "安全事件与常规告警共用响应通道，按等级优先处置。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-monitor.md",
+          "title": "监控告警与故障复盘",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "关键指标全覆盖，告警按严重程度分级处置。",
+            "故障后必须复盘，沉淀可执行的改进项。",
+            "容量规划依赖历史监控数据，需长期留存。",
+            "值班响应要保证告警在约定时限内被处理。"
+          ]
+        },
+        {
+          "source": "raw/security-incident.md",
+          "title": "数据泄露应急预案",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "事件响应先止损、再溯源、后复盘，避免扩大影响。",
+            "安全监控与告警是泄露发现的第一道信号。",
+            "泄露后必须复盘并更新数据保留与销毁策略。",
+            "响应过程全程记录时间线，供合规审计追溯。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-monitoring-alerting",
+          "title": "监控告警体系",
+          "type": "system"
+        },
+        {
+          "slug": "security-incident-response",
+          "title": "数据泄露应急响应",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "operations-change-window",
+      "title": "变更窗口与冻结期",
+      "type": "policy",
+      "topic": "operations",
+      "summary": "变更窗口与高峰期的隔离策略。",
+      "updated": "2025-08-14",
+      "sources": [
+        "raw/operations-change.md",
+        "raw/support-sla.md"
+      ],
+      "conclusion": [
+        "变更必须落在既定窗口内执行，避开服务高峰。",
+        "冻结期禁止非紧急变更，与 SLA 承诺高峰期错开。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-change.md",
+          "title": "生产环境变更管理规范",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "生产变更必须先申请、评审，禁止直接改生产。",
+            "变更必须落在既定窗口内执行，避开服务高峰。",
+            "每个变更都要有回滚方案，异常时先回滚。",
+            "变更后持续观察监控指标，确认无异常再关闭。"
+          ]
+        },
+        {
+          "source": "raw/support-sla.md",
+          "title": "服务 SLA 与满意度说明",
+          "topic": "support",
+          "department": "客服部",
+          "points": [
+            "SLA 承诺必须与产品能力对齐，避免过度承诺。",
+            "首次响应时限与解决时限要分别定义并量化考核。",
+            "满意度按工单抽样度量，低分样本必须回溯根因。",
+            "变更窗口等服务行为要避免落在 SLA 承诺的高峰期。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "support-sla",
+          "title": "服务等级协议",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "operations-backup-recovery",
+      "title": "备份与恢复演练",
+      "type": "playbook",
+      "topic": "operations",
+      "summary": "备份有效性与恢复演练。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/operations-inspection.md",
+        "raw/security-incident.md"
+      ],
+      "conclusion": [
+        "备份有效性需在巡检中验证，不能只看任务是否成功。",
+        "恢复演练与数据保留策略联动，保证可恢复。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/operations-inspection.md",
+          "title": "服务器巡检手册（每周点检）",
+          "topic": "operations",
+          "department": "运维部",
+          "points": [
+            "巡检覆盖资源、进程、日志等维度，异常项进入工单跟踪。",
+            "巡检结果与监控告警联动，形成隐患闭环。",
+            "容量水位是巡检重点，逼近阈值时提前扩容。",
+            "备份有效性需在巡检中验证，不能只看备份任务是否成功。"
+          ]
+        },
+        {
+          "source": "raw/security-incident.md",
+          "title": "数据泄露应急预案",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "事件响应先止损、再溯源、后复盘，避免扩大影响。",
+            "安全监控与告警是泄露发现的第一道信号。",
+            "泄露后必须复盘并更新数据保留与销毁策略。",
+            "响应过程全程记录时间线，供合规审计追溯。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "security-data-retention",
+          "title": "数据保留与销毁策略",
+          "type": "policy"
+        },
+        {
+          "slug": "operations-change-management",
+          "title": "变更管理流程",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "hr-onboarding-flow",
+      "title": "员工入职流程",
+      "type": "playbook",
+      "topic": "hr",
+      "summary": "从到岗到试用期考核的完整流程。",
+      "updated": "2025-08-13",
+      "sources": [
+        "raw/hr-onboarding.md",
+        "raw/security-policy.md"
+      ],
+      "conclusion": [
+        "入职流程包含安全合规培训，底线要求前置传递。",
+        "试用期目标与绩效在入职阶段对齐，避免后续扯皮。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-onboarding.md",
+          "title": "员工入职指引手册",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "入职流程必须包含安全合规培训，底线要求前置传递。",
+            "培训计划按岗位定制，入职即有清晰目标。",
+            "考勤与休假制度在入职时一次性告知。",
+            "试用期考核与绩效目标在入职阶段对齐。"
+          ]
+        },
+        {
+          "source": "raw/security-policy.md",
+          "title": "信息安全管理制度（2025 版）",
+          "topic": "security",
+          "department": "安全部",
+          "points": [
+            "信息按敏感程度分级，分级决定保护强度与访问范围。",
+            "访问控制遵循最小权限，默认拒绝、按需授权。",
+            "数据泄露等安全事件必须走既定应急响应流程。",
+            "全员安全意识培训是制度落地的必要条件。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-training-system",
+          "title": "培训体系",
+          "type": "system"
+        },
+        {
+          "slug": "security-training-awareness",
+          "title": "安全培训与意识",
+          "type": "playbook"
+        }
+      ]
+    },
+    {
+      "slug": "hr-performance-system",
+      "title": "绩效管理体系",
+      "type": "system",
+      "topic": "hr",
+      "summary": "目标设定、过程反馈与结果评定。",
+      "updated": "2025-08-11",
+      "sources": [
+        "raw/hr-performance.md",
+        "raw/hr-training.md"
+      ],
+      "conclusion": [
+        "绩效目标可衡量，过程反馈常态化而非一年一次。",
+        "绩效结果与晋升、培训投入直接挂钩。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-performance.md",
+          "title": "绩效考核管理办法（2025）",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "绩效目标必须可衡量，过程反馈常态化而非一年一次。",
+            "绩效结果与晋升评审直接挂钩。",
+            "培训投入向绩效短板倾斜，形成能力提升闭环。",
+            "考勤与合规表现纳入绩效综合评定。"
+          ]
+        },
+        {
+          "source": "raw/hr-training.md",
+          "title": "培训课程与晋升评审",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "培训课程按能力阶梯设计，覆盖岗位全周期。",
+            "晋升评审以绩效与能力双重证据为依据。",
+            "安全培训是全员必修项，不因岗位豁免。",
+            "招聘标准与能力标准对齐，保证入口质量。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-training-system",
+          "title": "培训体系",
+          "type": "system"
+        },
+        {
+          "slug": "hr-promotion-policy",
+          "title": "晋升评审策略",
+          "type": "policy"
+        }
+      ]
+    },
+    {
+      "slug": "hr-training-system",
+      "title": "培训体系",
+      "type": "system",
+      "topic": "hr",
+      "summary": "按能力阶梯设计的课程体系。",
+      "updated": "2025-08-11",
+      "sources": [
+        "raw/hr-training.md",
+        "raw/hr-onboarding.md"
+      ],
+      "conclusion": [
+        "培训课程按能力阶梯设计，覆盖岗位全周期。",
+        "培训投入向绩效短板倾斜，形成能力提升闭环。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-training.md",
+          "title": "培训课程与晋升评审",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "培训课程按能力阶梯设计，覆盖岗位全周期。",
+            "晋升评审以绩效与能力双重证据为依据。",
+            "安全培训是全员必修项，不因岗位豁免。",
+            "招聘标准与能力标准对齐，保证入口质量。"
+          ]
+        },
+        {
+          "source": "raw/hr-onboarding.md",
+          "title": "员工入职指引手册",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "入职流程必须包含安全合规培训，底线要求前置传递。",
+            "培训计划按岗位定制，入职即有清晰目标。",
+            "考勤与休假制度在入职时一次性告知。",
+            "试用期考核与绩效目标在入职阶段对齐。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-onboarding-flow",
+          "title": "员工入职流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "hr-performance-system",
+          "title": "绩效管理体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "hr-promotion-policy",
+      "title": "晋升评审策略",
+      "type": "policy",
+      "topic": "hr",
+      "summary": "以绩效与能力为证据的晋升规则。",
+      "updated": "2025-08-11",
+      "sources": [
+        "raw/hr-performance.md",
+        "raw/hr-training.md"
+      ],
+      "conclusion": [
+        "晋升评审以绩效与能力双重证据为依据。",
+        "评审标准与培训、招聘标准对齐，保证一致性。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-performance.md",
+          "title": "绩效考核管理办法（2025）",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "绩效目标必须可衡量，过程反馈常态化而非一年一次。",
+            "绩效结果与晋升评审直接挂钩。",
+            "培训投入向绩效短板倾斜，形成能力提升闭环。",
+            "考勤与合规表现纳入绩效综合评定。"
+          ]
+        },
+        {
+          "source": "raw/hr-training.md",
+          "title": "培训课程与晋升评审",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "培训课程按能力阶梯设计，覆盖岗位全周期。",
+            "晋升评审以绩效与能力双重证据为依据。",
+            "安全培训是全员必修项，不因岗位豁免。",
+            "招聘标准与能力标准对齐，保证入口质量。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-performance-system",
+          "title": "绩效管理体系",
+          "type": "system"
+        },
+        {
+          "slug": "hr-training-system",
+          "title": "培训体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "hr-attendance-policy",
+      "title": "考勤与休假制度",
+      "type": "policy",
+      "topic": "hr",
+      "summary": "考勤、休假与合规的规则。",
+      "updated": "2025-08-11",
+      "sources": [
+        "raw/hr-onboarding.md",
+        "raw/hr-performance.md"
+      ],
+      "conclusion": [
+        "考勤与休假制度在入职时一次性告知。",
+        "考勤与合规表现纳入绩效综合评定。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-onboarding.md",
+          "title": "员工入职指引手册",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "入职流程必须包含安全合规培训，底线要求前置传递。",
+            "培训计划按岗位定制，入职即有清晰目标。",
+            "考勤与休假制度在入职时一次性告知。",
+            "试用期考核与绩效目标在入职阶段对齐。"
+          ]
+        },
+        {
+          "source": "raw/hr-performance.md",
+          "title": "绩效考核管理办法（2025）",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "绩效目标必须可衡量，过程反馈常态化而非一年一次。",
+            "绩效结果与晋升评审直接挂钩。",
+            "培训投入向绩效短板倾斜，形成能力提升闭环。",
+            "考勤与合规表现纳入绩效综合评定。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-onboarding-flow",
+          "title": "员工入职流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "hr-performance-system",
+          "title": "绩效管理体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "hr-recruitment-concept",
+      "title": "招聘与人才标准",
+      "type": "concept",
+      "topic": "hr",
+      "summary": "招聘标准与能力标准对齐。",
+      "updated": "2025-08-11",
+      "sources": [
+        "raw/hr-training.md",
+        "raw/hr-performance.md"
+      ],
+      "conclusion": [
+        "招聘标准与能力标准对齐，保证入口质量。",
+        "招聘与培训衔接，新员工能快速进入岗位。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-training.md",
+          "title": "培训课程与晋升评审",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "培训课程按能力阶梯设计，覆盖岗位全周期。",
+            "晋升评审以绩效与能力双重证据为依据。",
+            "安全培训是全员必修项，不因岗位豁免。",
+            "招聘标准与能力标准对齐，保证入口质量。"
+          ]
+        },
+        {
+          "source": "raw/hr-performance.md",
+          "title": "绩效考核管理办法（2025）",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "绩效目标必须可衡量，过程反馈常态化而非一年一次。",
+            "绩效结果与晋升评审直接挂钩。",
+            "培训投入向绩效短板倾斜，形成能力提升闭环。",
+            "考勤与合规表现纳入绩效综合评定。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-onboarding-flow",
+          "title": "员工入职流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "hr-performance-system",
+          "title": "绩效管理体系",
+          "type": "system"
+        }
+      ]
+    },
+    {
+      "slug": "hr-culture-concept",
+      "title": "企业文化与价值观",
+      "type": "concept",
+      "topic": "hr",
+      "summary": "通过入职与培训传递企业文化。",
+      "updated": "2025-08-11",
+      "sources": [
+        "raw/hr-onboarding.md",
+        "raw/hr-training.md"
+      ],
+      "conclusion": [
+        "企业文化通过入职与培训反复传递，而非挂在墙上。",
+        "价值观与行为标准贯穿绩效与晋升，保持一致。"
+      ],
+      "sourceEvidence": [
+        {
+          "source": "raw/hr-onboarding.md",
+          "title": "员工入职指引手册",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "入职流程必须包含安全合规培训，底线要求前置传递。",
+            "培训计划按岗位定制，入职即有清晰目标。",
+            "考勤与休假制度在入职时一次性告知。",
+            "试用期考核与绩效目标在入职阶段对齐。"
+          ]
+        },
+        {
+          "source": "raw/hr-training.md",
+          "title": "培训课程与晋升评审",
+          "topic": "hr",
+          "department": "人力资源部",
+          "points": [
+            "培训课程按能力阶梯设计，覆盖岗位全周期。",
+            "晋升评审以绩效与能力双重证据为依据。",
+            "安全培训是全员必修项，不因岗位豁免。",
+            "招聘标准与能力标准对齐，保证入口质量。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "slug": "hr-onboarding-flow",
+          "title": "员工入职流程",
+          "type": "playbook"
+        },
+        {
+          "slug": "hr-training-system",
+          "title": "培训体系",
+          "type": "system"
+        }
+      ]
+    }
+  ]
+}
