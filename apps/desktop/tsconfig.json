@@ -1,31 +1,19 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "lib",
     "rootDir": "src",
-    "outDir": "lib/types",
-    "types": [
-      "node",
-      "electron"
-    ]
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
-  "include": [
-    "src"
-  ],
-  "references": [
-    {
-      "path": "../../vendor/include"
-    },
-    {
-      "path": "../../packages/boot/app-boot"
-    },
-    {
-      "path": "../../packages/util/atomic-write"
-    },
-    {
-      "path": "../../packages/util/home-paths"
-    },
-    {
-      "path": "../../packages/plugin-center/contracts"
-    }
-  ]
+  "include": ["src"]
 }

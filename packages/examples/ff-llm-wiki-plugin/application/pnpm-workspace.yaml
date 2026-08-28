@@ -1,8 +1,0 @@
-packages:
-  - "apps/*"
-  - "packages/*"
-
-# 允许原生模块执行安装脚本（esbuild 供 tsx / Next 使用；better-sqlite3 为本地数据层）
-allowBuilds:
-  better-sqlite3: true
-  esbuild: true

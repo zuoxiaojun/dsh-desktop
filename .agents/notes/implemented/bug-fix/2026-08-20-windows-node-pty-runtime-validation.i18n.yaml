@@ -1,6 +1,0 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-08-20-windows-node-pty-runtime-validation.md
-2026-08-20-windows-node-pty-runtime-validation.md: f41f4620ff0010642eb951c2fdf0df334ebc80f0
-2026-08-20-windows-node-pty-runtime-validation.zh.md: b496d59892cc7a56f7706abfc128d288c6b0bb02
