@@ -8,26 +8,31 @@ DSH Desktop 是一个**轻量 Electron 壳**，在 DeepSeek Harness 官方 `dsh 
 
 **核心原则：**
 
-- **把 DSH 当纯 npm 依赖**：加桌面行为只改壳（`apps/desktop/src/`），不改 DSH 核心，升级只 bump `@deepseek-ai/dsh`。
+- **纯壳**：不打包 dsh 及其依赖，运行时用**用户自己的 Node.js** + 受管安装的 `@deepseek-ai/dsh`，升级只跟 npm latest。
+- **缺 Node 自动装**：首次启动检测系统 Node，没有（或 < 18）时从**国内镜像 npmmirror** 下载 Node LTS 到用户目录，闪屏全程显示进度。
 - 功能与原生 `dsh web` 完全一致，桌面只加「入口」，不做功能增强。
-- 只加一个 Electron 桌面入口：窗口管理 + 系统托盘 + 子进程管理。
-- 一键打包流水线，支持 macOS / Windows / Linux。
-- 用户无需安装 Node.js（内嵌 Node.js + dsh 依赖）。
+- 只加一个 Electron 桌面入口：窗口管理 + 系统托盘 + 子进程管理 + 环境初始化。
+- 一键打包流水线，支持 macOS / Windows / Linux，包体 ~90MB（纯 Electron）。
 
 ## 2. 架构
 
-### 2.1 三层架构
+### 2.1 四层架构
 
 ```
 ┌─────────────────────────────────────────────────┐
+│  Layer 0: 环境初始化（仅首次 / 缺 Node 时）         │
+│  检测系统 Node ≥18 → 无则 npmmirror 下载 v24 LTS    │
+│  SHA256 校验 → 解压到 userData/node → 冒烟验证      │
+│  → 受管安装 dsh（node npm-cli install --prefix）    │
+│  全程闪屏（boot-window）实时进度                     │
+├─────────────────────────────────────────────────┤
 │  Layer 1: Electron 主进程                         │
 │  窗口管理 | 系统托盘 | 子进程 spawn | 安全策略      │
-│  resolveDshEntry() → 优先内嵌 dsh，兜底 npx        │
+│  resolveNode() → 系统 node 优先，兜底受管 node     │
 ├─────────────────────────────────────────────────┤
 │  Layer 2: dsh web 子进程                           │
-│  process.execPath + ELECTRON_RUN_AS_NODE=1        │
-│  --expose-internals 启动 dsh（HMR 需要）            │
-│  监听 127.0.0.1:随机端口，输出就绪 URL              │
+│  node --expose-internals <userData>/dsh/.../bin.js │
+│  监听 127.0.0.1:0，输出就绪 URL                    │
 │  ─── 所有 Harness 核心逻辑在这里运行 ───            │
 ├─────────────────────────────────────────────────┤
 │  Layer 3: Web 渲染器                               │
@@ -38,13 +43,13 @@ DSH Desktop 是一个**轻量 Electron 壳**，在 DeepSeek Harness 官方 `dsh 
 
 ### 2.2 与 DSH 官方的关系
 
-DSH 官方 npm 包 `@deepseek-ai/dsh` 是纯依赖（非子模块、非 fork）。**关键决策：DSH 是 npm 依赖。**
+DSH 官方 npm 包 `@deepseek-ai/dsh` **不打包进客户端**。客户端启动时用解析出的 Node（系统或受管）执行：
 
-| 方式 | 说明 | 选型 |
-| ------ | ------ | ------ |
-| npm 依赖 | `@deepseek-ai/dsh` 发布到 npm，桌面端直接引用 | ✅ 当前方案 |
-| 子模块 | git submodule 引用 DSH 仓库 | ❌ 维护负担大 |
-| 复制源码 | 把整个 DSH 仓库复制进来 | ❌ 不可维护 |
+```
+node <npm-cli.js> install --prefix <userData>/dsh @deepseek-ai/dsh
+```
+
+首次联网安装到用户数据目录（走国内镜像 `registry.npmmirror.com`），之后幂等复用。**关键决策：为什么不用 npx/npm exec？**——dsh 的 HMR 依赖 `--expose-internals`，而 npx/npm exec 不会把该 flag 传给 bin 脚本，dsh 起不来。受管安装 + `node --expose-internals <入口> web` 直接启动，行为与官方完全一致。
 
 ### 2.3 数据流
 
@@ -71,31 +76,44 @@ DSH 官方 npm 包 `@deepseek-ai/dsh` 是纯依赖（非子模块、非 fork）�
 
 ### 3.1 main.ts — Electron 主进程
 
-**职责：** 窗口创建、系统托盘、子进程 spawn、安全策略、退出流程。
+**职责：** 窗口创建、系统托盘、子进程 spawn、环境初始化编排、安全策略、退出流程。
 
 **关键路径：**
 
 ```
 app.whenReady()
   → boot()
+    → createBootWindow()            // 闪屏
+    → resolveNode()                 // 系统 Node ≥18 / 受管 v24 LTS，含进度回调
+    → ensureManagedDsh()            // 受管安装 @deepseek-ai/dsh（首次联网）
     → createHostSupervisor(spawnDshWeb)
-    → hardenSession()      // 拒绝所有权限请求
-    → host.start()         // 启动 dsh 子进程，等待就绪 URL
+    → hardenSession()               // 拒绝所有权限请求（仅首次，幂等）
+    → host.start()                  // 启动 dsh 子进程，等待就绪 URL
+    → DSH_VERSION = readManagedDshVersion()   // 运行时读取受管 dsh 版本
+    → bootWindow.close()
     → createTray()
-    → lifecycle.showWindow()
-      → createMainWindow() // 加载 dsh URL
+    → lifecycle.showWindow()        // 加载 dsh URL
 ```
 
-**dsh 启动策略：**
+**Node 解析策略（node-manager.ts）：**
 
 ```
-spawnDshWeb()
-  → resolveDshEntry() 检查两个路径：
-    1. process.resourcesPath + "dsh/node_modules/..."   // 生产环境
-    2. DESKTOP_DIR + "resources/dsh/node_modules/..."    // 开发环境
-  → 找到: process.execPath + ELECTRON_RUN_AS_NODE=1 运行
-  → 没找到: npx @deepseek-ai/dsh web 兜底
+resolveNode()
+  → detectSystemNode()
+      1. which/where 找 node
+      2. node --version 解析主版本 ≥18（config.minSystemNode）
+      3. 定位 npm-cli.js（<node>/../lib/node_modules/npm/... 或 win 下 <node>/node_modules/npm/...）
+      4. 全部满足 → 返回系统 Node（managed: false）
+  → 否则 installManagedNode()
+      1. npmmirror 下载 node-v{V}-{platform}-{arch}.{tar.gz|zip}（流式，字节进度）
+      2. SHA256 校验（失败删除重下，≤2 次重试）
+      3. 系统 tar / PowerShell 解压到 userData/node/（临时目录 + 原子 rename）
+      4. node --version 冒烟 + npm-cli 定位
 ```
+
+**闪屏（boot-window.ts + boot.html + boot-preload.ts）：** 无边框小窗，内联样式/脚本无外部资源；`contextBridge` 只暴露 `onProgress`/`onError`/`retry` 固定方法，IPC 通道 `dsh-boot:progress`/`dsh-boot:error`/`dsh-boot:retry`；错误态显示重试按钮（重试重新执行 boot，先清理已存在的 host）。
+
+**版本策略（resources/node-versions.json）：** `version`（受管 Node 版本）、`minSystemNode`（系统 Node 下限）、`mirrorBase`（镜像根）、`checksums`（平台 → SHA256）。发布新 Node 版本时更新；checksum 从 `{mirrorBase}/v{version}/SHASUMS256.txt` 获取。
 
 **窗口配置：** 标准 macOS 原生窗口（`frame: true` 默认）；`sandbox: true`、`contextIsolation: true`、`nodeIntegration: false`；最小尺寸 960×640；关闭时隐藏到托盘而非退出。
 
@@ -120,14 +138,34 @@ HostSupervisor
 - **SIGTERM → SIGKILL**：优雅关闭，超时后强制终止。
 - **意外退出处理**：子进程非预期退出时自动退出桌面应用。
 - **输出缓冲**：保留最多 32KB 启动输出用于诊断。
+- **spawnDshWeb**：`spawn(nodeExecutable, ["--expose-internals", dshEntry, "web", "--no-open", "--host", "127.0.0.1", "--port", "0"])`——不经 shell，Windows 无 `.cmd` 坑。
 
 > **The Host（leading word）**：每一项任务都会碰到 Host——被监督的 `dsh web` 子进程。它绑定 `127.0.0.1:0`，就绪时打印唯一的 **readiness line**：
+>
 > ```
 > dsh web: http://127.0.0.1:PORT
 > ```
-> `ReadinessParser` 断言该行为 loopback HTTP + 显式端口，否则拒绝。Host 在窗口显示前启动；`resolveDshEntry` 优先内嵌 dsh，兜底 `npx`。
+>
+> `ReadinessParser` 断言该行为 loopback HTTP + 显式端口，否则拒绝。Host 在窗口显示前启动；Node 与 dsh 入口由 `resolveNode` + `ensureManagedDsh` 提供。
 
-### 3.3 window-lifecycle.ts — 窗口生命周期
+### 3.3 node-manager.ts — Node 解析与受管安装
+
+纯逻辑模块，不 import electron（userData 由调用方注入），可单测。职责：
+
+- `detectSystemNode(platform, minSystemNode)`：PATH 检测 + 版本判断 + npm-cli 定位。
+- `installManagedNode({userDataDir, config, onProgress, signal})`：下载（字节进度）→ SHA256 → 解压 → 冒烟 → 原子落位。
+- `ensureManagedDsh({node, userDataDir, ...})`：`node npm-cli.js install --prefix <userData>/dsh @deepseek-ai/dsh`，注入 `npm_config_registry=https://registry.npmmirror.com` 与 `npm_config_cache=<userData>/npm-cache`；已存在则跳过。
+- `resolveNode(options)`：编排入口，返回 `NodeInfo { executable, version, managed, npmCli }`。
+- 进度模型 `NodeProgress { stage, percent?, receivedBytes?, totalBytes?, detail? }`，stage 含 detecting/using-system/downloading/verifying/installing/smoke/installing-dsh/ready。
+
+**注意（实现细节）：**
+
+- Node 官方 Windows 归档平台名是 `win` 不是 `win32`（`node-v{V}-win-x64.zip`）。
+- posix 下处理 Windows 路径要用 `node:path` 的 `win32` 变体（`resolveNpmCli`）。
+- `installManagedNode` 在 rename 到 `userData/node/` 后需**重新计算** executable 路径（staging 路径已失效）。
+- `mkdtempSync` 前先 `mkdirSync(userDataDir, { recursive: true })`。
+
+### 3.4 window-lifecycle.ts — 窗口生命周期
 
 ```
 窗口关闭 → event.preventDefault() → 隐藏窗口
@@ -137,15 +175,16 @@ HostSupervisor
 
 **关键设计：** 窗口关闭不退出，托盘中常驻；多次退出请求合并（pendingQuit 共享）；窗口重建时等待 Host 就绪；安装器退出信号（`--dsh-installer-quit`）特殊处理；单实例锁 `app.requestSingleInstanceLock()`。
 
-### 3.4 preload.ts — 沙箱桥接
+### 3.5 preload.ts — 沙箱桥接（主窗口）
 
 ```
 sandbox: true 的渲染器
     ├── dshDesktop.platform              → 'darwin' | 'win32' | 'linux'
+    ├── dshDesktop.versions              → { desktop, dsh }（dsh 运行时读取）
     └── dshDesktop.workspace.pickDirectory() → 目录选择器
 ```
 
-**安全模型：** `sandbox: true` 让渲染器无法访问 Node.js API；`contextBridge` 只暴露**固定方法**，没有通用 IPC 通道；所有权限请求被拒绝（`hardenSession()`）；导航限制只允许加载 Host 同源 URL，外部链接走系统浏览器。
+**安全模型：** `sandbox: true` 让渲染器无法访问 Node.js API；`contextBridge` 只暴露**固定方法**，没有通用 IPC 通道；所有权限请求被拒绝（`hardenSession()`）；导航限制只允许加载 Host 同源 URL，外部链接走系统浏览器。闪屏窗口（boot-preload）同样只暴露固定方法。
 
 ## 4. 命令与开发工作流
 
@@ -153,56 +192,52 @@ sandbox: true 的渲染器
 pnpm install
 pnpm run dev:desktop           # 构建（仅当指纹变化）+ 启动
 pnpm run dev:desktop:rebuild   # 强制重建后启动
+pnpm run test                  # vitest 单元测试（node-manager 纯逻辑）
 pnpm run typecheck             # tsc --noEmit
 pnpm run build                 # tsdown → lib/  (gitignored)
-pnpm run prepare:dsh           # 重新生成捆绑 dsh → resources/dsh  (gitignored)
+pnpm run package               # 构建 + electron-builder --dir（unpacked）
 pnpm run dist:mac              # macOS DMG
 pnpm run dist:win              # Windows NSIS
 pnpm run dist:linux            # Linux AppImage
 pnpm run dist:all              # 全平台
 ```
 
-`scripts/dev-desktop.ts` 在 `lib/.dev-fingerprint` 缓存指纹，仅当 `src/**` 或配置变化时才重建。`lib/` 和 `resources/dsh/` 是 gitignored 构建产物——用 `build`/`prepare:dsh` 重新生成，而不是直接编辑其内容。
+`scripts/dev-desktop.ts` 在 `lib/.dev-fingerprint` 缓存指纹（覆盖全部 src 源文件 + boot.html + node-versions.json），仅当变化时才重建。`lib/` 是 gitignored 构建产物——用 `build` 重新生成，不要直接编辑其内容。
 
 ## 5. 窗口与生命周期
 
 - **关闭即隐藏，永不退出**：窗口隐藏到托盘（`window-lifecycle.ts`）；显式退出才先停 Host。
-- **安全是硬约束**：`sandbox: true`、`contextIsolation: true`、`nodeIntegration: false`；`preload.ts` 只暴露固定桥接方法，无通用 IPC。加能力就走固定桥，不要加 catch-all。
+- **安全是硬约束**：`sandbox: true`、`contextIsolation: true`、`nodeIntegration: false`；`preload.ts`/`boot-preload.ts` 只暴露固定桥接方法，无通用 IPC。加能力就走固定桥，不要加 catch-all。
 
 ## 6. 打包与分发
 
-**内嵌 dsh 依赖（用户无需安装 Node.js）：**
+**纯壳，不内嵌任何运行时/依赖：**
 
 ```
-pnpm run prepare:dsh
-  → 在 /tmp/dsh-bundle-{timestamp} 创建临时项目
-  → pnpm install @deepseek-ai/dsh（node-linker=hoisted）
-  → cp -RL 复制到 apps/desktop/resources/dsh/
-  → 打平 .pnpm/ 虚拟 store
-  → 冒烟测试：dsh --version
+pnpm run build
+  → tsdown 产出 lib/（main.mjs、preload.mjs、boot-preload.mjs）
+  → electron-builder 打包（files 含 lib/**、resources/boot.html、resources/node-versions.json 等）
 ```
-
-产物：`resources/dsh/node_modules/`（约 193 个顶层依赖，~260MB）。
 
 **electron-builder 核心配置：**
 
 ```cjs
-files: ["lib/**", "package.json", "resources/icon.svg", "build/icon.png"]
-extraResources: [
-  { from: "resources/dsh/node_modules",  to: "dsh/node_modules" },
-  { from: "resources/dsh/package.json",  to: "dsh/package.json" },
-]
+files: ["lib/**", "package.json", "resources/icon.svg",
+        "resources/version.json", "resources/boot.html",
+        "resources/node-versions.json", "build/icon.png"]
 ```
 
-**macOS 特殊处理：** electron-builder 的 DMG 目标因 `@electron/get` 兼容性问题不可用，改由手写 `scripts/package-dmg.sh`（`hdiutil`）制作。`package-dmg.sh` 会在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名（见 §9），否则别的 Mac 上会报「app 已损坏」。
+无 `extraResources`（不打包 dsh/node_modules）。Node 与 dsh 均在**首次运行时**由客户端自己安装到用户数据目录。
 
-**`dist:*` 步骤顺序**（顺序很重要）：`prepare:dsh` → `build` → `electron-builder --dir` → `verify-app.sh` → `package-dmg.sh`。
+**macOS 特殊处理：** electron-builder 的 DMG 目标因 `@electron/get` 兼容性问题不可用，改由手写 `scripts/package-dmg.sh`（`hdiutil`）制作。`package-dmg.sh` 会在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名（见 §8），否则别的 Mac 上会报「app 已损坏」。
+
+**`dist:*` 步骤顺序**（顺序很重要）：`build` → `electron-builder --dir` → `verify-app.sh` → `package-dmg.sh`。
 
 **产物：**
 
 | 平台 | 产物 | 大小 |
 | ------ | ------ | ------ |
-| macOS | `DSH Desktop-{version}-arm64.dmg` | ~287MB |
+| macOS | `DSH Desktop-{version}-arm64.dmg` | ~90MB（纯 Electron） |
 | Windows | `DSH Desktop-{version}-setup-x64.exe` | TBD |
 | Linux | `DSH Desktop-{version}-x64.AppImage` | TBD |
 
@@ -212,43 +247,55 @@ extraResources: [
 dsh-desktop/
 ├── apps/desktop/              # Electron 桌面应用（唯一入口）
 │   ├── src/
-│   │   ├── main.ts            # 主进程入口
-│   │   ├── preload.ts         # 沙箱桥接
+│   │   ├── main.ts            # 主进程入口（含启动编排）
+│   │   ├── preload.ts         # 主窗口沙箱桥接
+│   │   ├── boot-preload.ts    # 闪屏沙箱桥接
+│   │   ├── boot-window.ts     # 闪屏窗口
+│   │   ├── node-manager.ts    # Node 解析/下载/校验/安装 + 受管 dsh
 │   │   ├── host-supervisor.ts # 子进程生命周期管理
-│   │   └── window-lifecycle.ts # 窗口生命周期
+│   │   ├── window-lifecycle.ts # 窗口生命周期
+│   │   └── *.test.ts          # vitest 单元测试
 │   ├── scripts/
 │   │   ├── dev-desktop.ts     # 开发启动器（指纹缓存 + 增量构建）
-│   │   ├── prepare-dsh.ts     # 打包 dsh 依赖
-│   │   ├── verify-app.sh      # 打包后验证
+│   │   ├── verify-app.sh      # 打包后验证（纯壳结构检查）
 │   │   └── package-dmg.sh     # macOS DMG 打包
-│   ├── resources/             # 图标、版本号、移除安全验证脚本
+│   ├── resources/             # boot.html、icon、版本号、node-versions、移除安全验证脚本
 │   ├── build/                 # 构建图标（icns/iconset/png）
+│   ├── vitest.config.ts
 │   ├── electron-builder.config.cjs
 │   ├── tsdown.config.ts
 │   ├── tsconfig.json
 │   └── package.json
+├── docs/
+│   ├── spec-node-runtime.md   # 纯壳架构 spec（决策记录）
+│   └── superpowers/plans/     # 实施计划
 ├── README.md                  # 面向人的概览
 ├── LICENSE
 ├── AGENTS.md                  # 本文件
 └── package.json               # workspace 根配置
 ```
 
-## 8. 与 DSH 版本兼容性
+## 8. 运行时依赖与兼容性
 
-| DSH 版本 | 桌面端兼容性 |
-|----------|-------------|
-| 0.1.1-rc.2 | 兼容 ✅（当前） |
+| 组件 | 策略 |
+| ---------- | ------------- |
+| Node.js | 系统 Node ≥18 直接复用；否则受管安装 v24 LTS（`node-versions.json` 可配） |
+| dsh | 首次启动受管安装 npm latest（国内镜像），后续幂等复用；版本运行时读取显示 |
 
-桌面端只需关注 `dsh web` 的启动接口和就绪协议；只要这两者不破坏性变更，桌面端就不需要改。
+- **npm 镜像**：`npm_config_registry=https://registry.npmmirror.com`、`npm_config_cache=<userData>/npm-cache`（不依赖用户全局 `~/.npm`）。
+- **Node 下载镜像**：`mirrorBase` 可配，默认 `https://registry.npmmirror.com/-/binary/node`。
+- 只要 `dsh web` 的启动接口（`--no-open --host 127.0.0.1 --port 0`）与就绪协议（`dsh web: http://127.0.0.1:PORT`）不破坏性变更，桌面端就不需要改。
 
 ## 9. 已知问题
 
 - **代码签名**：未配置签名证书，macOS 会提示「无法验证开发者」，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过。
   - 注意：`electron-builder --dir` 在无证书时只给主程序做 linker-signed 的 ad-hoc 签名，**不会**生成 `Contents/_CodeSignature`。这会导致 `spctl` 报「code has no resources but signature indicates they must be present」（视为"已损坏"），删 quarantine 救不回，别的机器双击即报「app 已损坏，无法打开」。因此 `package-dmg.sh` 在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名，使 `spctl` 变为"rejected/未公证"（可被删 quarantine 绕过）；`移除安全验证.command` 也会在签名缺失/无效时自动重签。
+- **首次启动需联网**：Node 缺失时下载 Node（~50MB）+ dsh 依赖（~260MB 解压）。离线会失败，闪屏给重试按钮。用户可手动装 Node 后重启绕过。
 - **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新。
-- **版本角标（已修复）**：`injectVersionBadge`（`main.ts`）改用 `document.createTextNode` 构建（避开 innerHTML），并在注入前把版本号用 `JSON.stringify` 序列化；保留 MutationObserver 自愈（SPA 导航移除后自动重渲染）与 `DSH_VERSION` 为空时只显示桌面版本一行；重注入时断开旧观察者，避免 SPA 长会话中观察者累积。注意：模板字符串中的 `${DESKTOP_VERSION}`/`${DSH_VERSION}` 在主进程作用域内被求值，注入渲染器的是实际值——旧的「显示为字面文本」判断不成立。
+- **版本角标**：`injectVersionBadge`（`main.ts`）改用 `document.createTextNode` 构建（避开 innerHTML），并在注入前把版本号用 `JSON.stringify` 序列化；保留 MutationObserver 自愈（SPA 导航移除后自动重渲染）与 `DSH_VERSION` 为空时只显示桌面版本一行。`DSH_VERSION` 为**运行时**读取受管 dsh 的 package.json（构建时不可知），在 host 就绪后设置。
+- **受管 Node 校验和**：`node-versions.json` 的 checksums 为空时，受管安装会直接报「no SHA256 checksum」——发布前必须从 SHASUMS256.txt 填入，防止静默安装损坏/被篡改的二进制。
 
 ## 完成前检查
 
-- `pnpm run typecheck` 与 `pnpm run build` 均通过。
-- 目前无测试套件，虽装了 `vitest`；`host-supervisor.ts` 是首个补测的合理目标。
+- `pnpm run typecheck`、`pnpm run build`、`pnpm run test` 均通过。
+- 测试套件：vitest，`apps/desktop/src/*.test.ts`；`node-manager.ts` 纯逻辑为主要测试对象（版本解析/归档映射/URL/校验和/npm-cli 定位/下载进度/SHA256/解压/检测）。
