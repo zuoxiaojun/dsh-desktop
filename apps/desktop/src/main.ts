@@ -214,7 +214,7 @@ function injectVersionBadge(win: BrowserWindow): void {
     : `DSH Desktop v${DESKTOP_VERSION}`;
   win.webContents
     .executeJavaScript(
-      `(()=>{const e=document.getElementById("dsh-desktop-version");if(e)return;const s=document.createElement("style");s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);const d=document.createElement("div");d.id="dsh-desktop-version";d.innerHTML=${JSON.stringify(html)};document.body.appendChild(d)})()`,
+      `(()=>{const c=document.getElementById("dsh-desktop-version");if(c)return;const s=document.createElement("style");s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);const d=document.createElement("div");d.id="dsh-desktop-version";d.innerHTML=${JSON.stringify(html)};document.body.appendChild(d);const o=new MutationObserver(()=>{if(!document.getElementById("dsh-desktop-version")){const n=document.createElement("div");n.id="dsh-desktop-version";n.innerHTML=${JSON.stringify(html)};document.body.appendChild(n)}});o.observe(document.body,{childList:true,subtree:true})})()`,
     )
     .catch(() => {
       /* ignore */

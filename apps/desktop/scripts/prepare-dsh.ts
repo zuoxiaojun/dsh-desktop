@@ -126,10 +126,9 @@ function main(): void {
 
   // Quick smoke test: run `dsh --version` using the bundled copy
   console.log("🧪 Smoke-testing bundled dsh...");
-  const versionOut = run(
-    `node --expose-internals "${dshEntry}" --version`,
-    { cwd: TARGET_DIR },
-  );
+  const versionOut = run(`node --expose-internals "${dshEntry}" --version`, {
+    cwd: TARGET_DIR,
+  });
   console.log(`   dsh --version = ${versionOut}`);
 
   console.log("✅ prepare-dsh complete");
