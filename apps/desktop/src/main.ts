@@ -209,12 +209,12 @@ function registerIpcHandlers(): void {
 }
 
 function injectVersionBadge(win: BrowserWindow): void {
-  const label = DSH_VERSION
-    ? `DSH Desktop v${DESKTOP_VERSION} · dsh v${DSH_VERSION}`
+  const html = DSH_VERSION
+    ? `DSH Desktop v${DESKTOP_VERSION}<br>dsh v${DSH_VERSION}`
     : `DSH Desktop v${DESKTOP_VERSION}`;
   win.webContents
     .executeJavaScript(
-      `(()=>{const e=document.createElement("div");e.id="dsh-desktop-version";e.style.cssText="position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif";e.textContent=${JSON.stringify(label)};document.body.appendChild(e)})()`,
+      `(()=>{const e=document.createElement("div");e.id="dsh-desktop-version";e.style.cssText="position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right";e.innerHTML=${JSON.stringify(html)};document.body.appendChild(e)})()`,
     )
     .catch(() => {
       /* ignore */
