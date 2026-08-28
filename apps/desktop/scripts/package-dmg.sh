@@ -32,6 +32,10 @@ mkdir -p "$STAGING_DIR"
 echo "   Copying .app..."
 cp -R "$APP_PATH" "$STAGING_DIR/"
 
+# 复制移除安全验证脚本
+echo "   Copying 移除安全验证.command..."
+cp "$APP_DIR/resources/移除安全验证.command" "$STAGING_DIR/"
+
 # 创建 Applications 链接
 ln -s /Applications "$STAGING_DIR/Applications"
 
