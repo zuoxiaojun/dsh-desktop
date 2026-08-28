@@ -2,7 +2,17 @@
 
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { existsSync, createReadStream, createWriteStream } from "node:fs";
+import {
+  existsSync,
+  createReadStream,
+  createWriteStream,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+} from "node:fs";
+import { readdir } from "node:fs/promises";
 import { get as httpGet } from "node:http";
 import { get as httpsGet } from "node:https";
 import { dirname, join, win32 } from "node:path";
@@ -153,6 +163,247 @@ export async function detectSystemNode(
   const npmCli = resolveNpmCli(executable, platform);
   if (!existsSync(npmCli)) return undefined;
   return { executable, version, managed: false, npmCli };
+}
+
+export function managedDshEntry(userDataDir: string): string {
+  return join(
+    userDataDir,
+    "dsh",
+    "node_modules",
+    "@deepseek-ai",
+    "dsh",
+    "lib",
+    "bin.js",
+  );
+}
+
+export function readManagedDshVersion(
+  userDataDir: string,
+): string | undefined {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(
+        join(
+          userDataDir,
+          "dsh",
+          "node_modules",
+          "@deepseek-ai",
+          "dsh",
+          "package.json",
+        ),
+        "utf8",
+      ),
+    ) as { version?: unknown };
+    return typeof pkg.version === "string" ? pkg.version : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function extractArchive(
+  archivePath: string,
+  destDir: string,
+  platform: NodeJS.Platform,
+): Promise<void> {
+  if (platform === "win32") {
+    const out = await runCommand(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-Command",
+        `Expand-Archive -LiteralPath '${archivePath}' -DestinationPath '${destDir}' -Force`,
+      ],
+      false,
+    );
+    if (out === undefined) {
+      throw new Error(`extract failed for ${archivePath}`);
+    }
+    return;
+  }
+  const status = await new Promise<number | null>((resolve) => {
+    const child = spawn("tar", ["-xzf", archivePath, "-C", destDir], {
+      windowsHide: true,
+    });
+    child.on("error", () => resolve(null));
+    child.on("close", (code) => resolve(code));
+  });
+  if (status !== 0) throw new Error(`extract failed for ${archivePath}`);
+}
+
+async function hashMatches(archivePath: string, expected: string): Promise<boolean> {
+  const actual = await sha256File(archivePath);
+  return actual.toLowerCase() === expected.toLowerCase();
+}
+
+export async function installManagedNode(options: {
+  userDataDir: string;
+  config: NodeVersionsConfig;
+  onProgress?: (p: NodeProgress) => void;
+  signal?: AbortSignal;
+}): Promise<NodeInfo> {
+  const { userDataDir, config, onProgress, signal } = options;
+  const platform = process.platform as NodeJS.Platform;
+  const arch = process.arch;
+  const url = nodeDownloadUrl(config, platform, arch);
+  const expected = checksumFor(config, platform, arch);
+  const root = join(userDataDir, "node");
+  mkdirSync(userDataDir, { recursive: true });
+  const staging = mkdtempSync(join(userDataDir, ".node-tmp-"));
+
+  try {
+    const archivePath = join(
+      staging,
+      `archive${platform === "win32" ? ".zip" : ".tar.gz"}`,
+    );
+    let attempt = 0;
+    for (;;) {
+      if (signal?.aborted) throw new Error("download aborted");
+      onProgress?.({
+        stage: "downloading",
+        detail: `Node.js v${config.version}`,
+        percent: 0,
+      });
+      try {
+        await downloadFile(
+          url,
+          archivePath,
+          (p) => {
+            onProgress?.({
+              stage: "downloading",
+              detail: `Node.js v${config.version}`,
+              percent:
+                p.totalBytes === undefined
+                  ? undefined
+                  : Math.round((p.receivedBytes / p.totalBytes) * 100),
+              receivedBytes: p.receivedBytes,
+              totalBytes: p.totalBytes,
+            });
+          },
+          signal,
+        );
+        break;
+      } catch (error) {
+        rmSync(archivePath, { force: true });
+        attempt += 1;
+        if (attempt >= 3 || signal?.aborted) throw error;
+        onProgress?.({
+          stage: "downloading",
+          detail: `下载失败，第 ${attempt} 次重试…`,
+        });
+      }
+    }
+
+    onProgress?.({ stage: "verifying", detail: "SHA256 校验中…" });
+    if (!(await hashMatches(archivePath, expected))) {
+      throw new Error(`SHA256 mismatch for ${url}`);
+    }
+
+    onProgress?.({ stage: "installing", detail: "解压安装中…" });
+    const extractDir = join(staging, "extracted");
+    await extractArchive(archivePath, extractDir, platform);
+    const entries = await readdir(extractDir);
+    const entryName = entries[0]; // e.g. node-v24.15.0-darwin-arm64
+    if (entryName === undefined) throw new Error("archive extracted nothing");
+    const extractedRoot = join(extractDir, entryName);
+
+    onProgress?.({ stage: "smoke", detail: "验证安装…" });
+    const stagedExecutable =
+      platform === "win32"
+        ? join(extractedRoot, "node.exe")
+        : join(extractedRoot, "bin", "node");
+    const versionOut = await runNodeVersion(stagedExecutable);
+    const version =
+      versionOut === undefined ? undefined : parseNodeVersion(versionOut);
+    if (version === undefined) {
+      throw new Error(
+        `installed Node smoke test failed (${String(versionOut)})`,
+      );
+    }
+
+    const newExecutable =
+      platform === "win32" ? join(root, "node.exe") : join(root, "bin", "node");
+    rmSync(root, { recursive: true, force: true });
+    renameSync(extractedRoot, root);
+    const npmCli = resolveNpmCli(newExecutable, platform);
+    if (!existsSync(npmCli)) {
+      throw new Error(`npm not found under managed Node: ${npmCli}`);
+    }
+    onProgress?.({ stage: "ready", detail: `Node.js ${version}` });
+    return { executable: newExecutable, version, managed: true, npmCli };
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
+}
+
+export async function ensureManagedDsh(options: {
+  node: NodeInfo;
+  userDataDir: string;
+  onProgress?: (p: NodeProgress) => void;
+  signal?: AbortSignal;
+}): Promise<string> {
+  const { node, userDataDir, onProgress, signal } = options;
+  const entry = managedDshEntry(userDataDir);
+  if (existsSync(entry)) {
+    onProgress?.({ stage: "installing-dsh", detail: "dsh 已就绪" });
+    return entry;
+  }
+  const env = { ...process.env } as Record<string, string | undefined>;
+  env.npm_config_registry = "https://registry.npmmirror.com";
+  env.npm_config_cache = join(userDataDir, "npm-cache");
+  if (signal?.aborted) throw new Error("install aborted");
+  onProgress?.({
+    stage: "installing-dsh",
+    detail: "首次安装 dsh（国内镜像），请稍候…",
+  });
+  const status = await new Promise<number | null>((resolve) => {
+    const child = spawn(
+      node.executable,
+      [
+        node.npmCli,
+        "install",
+        "--prefix",
+        join(userDataDir, "dsh"),
+        "@deepseek-ai/dsh",
+      ],
+      { env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
+    );
+    child.stderr?.on("data", (c: Buffer) => process.stderr.write(c));
+    child.on("error", () => resolve(null));
+    child.on("close", (code) => resolve(code));
+  });
+  if (status !== 0 || !existsSync(entry)) {
+    throw new Error("managed dsh install failed (network or registry issue)");
+  }
+  onProgress?.({ stage: "installing-dsh", detail: "dsh 安装完成" });
+  return entry;
+}
+
+export interface ResolveNodeOptions {
+  userDataDir: string;
+  config: NodeVersionsConfig;
+  onProgress?: (p: NodeProgress) => void;
+  signal?: AbortSignal;
+}
+
+export async function resolveNode(
+  options: ResolveNodeOptions,
+): Promise<NodeInfo> {
+  const { userDataDir, config, onProgress, signal } = options;
+  const platform = process.platform as NodeJS.Platform;
+  onProgress?.({ stage: "detecting", detail: "检测 Node.js 环境…" });
+  const system = await detectSystemNode(platform, config.minSystemNode);
+  if (system !== undefined) {
+    onProgress?.({
+      stage: "using-system",
+      detail: `使用系统 Node.js ${system.version}`,
+    });
+    return system;
+  }
+  onProgress?.({
+    stage: "detecting",
+    detail: "未检测到可用的 Node.js，准备下载…",
+  });
+  return installManagedNode({ userDataDir, config, onProgress, signal });
 }
 
 export function resolveNpmCli(
