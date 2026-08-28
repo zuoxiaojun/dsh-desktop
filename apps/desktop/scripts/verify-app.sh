@@ -4,6 +4,11 @@
 
 set -euo pipefail
 
+if ! command -v node >/dev/null 2>&1; then
+  echo "❌ node not found in PATH; verify-app.sh needs node to read package versions" >&2
+  exit 1
+fi
+
 APP_PATH="${1:-}"
 if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
   # Auto-detect from project dist/
