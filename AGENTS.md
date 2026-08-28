@@ -152,18 +152,21 @@ HostSupervisor
 
 纯逻辑模块，不 import electron（userData 由调用方注入），可单测。职责：
 
-- `detectSystemNode(platform, minSystemNode)`：PATH 检测 + 版本判断 + npm-cli 定位。
+- `detectSystemNode(platform, minSystemNode)`：PATH 检测 + 常见安装位置扫描（brew/nvm/volta/fnm，见下）+ 版本判断 + npm-cli 定位。
 - `installManagedNode({userDataDir, config, onProgress, signal})`：下载（字节进度）→ SHA256 → 解压 → 冒烟 → 原子落位。
-- `ensureManagedDsh({node, userDataDir, ...})`：`node npm-cli.js install --prefix <userData>/dsh @deepseek-ai/dsh`，注入 `npm_config_registry=https://registry.npmmirror.com` 与 `npm_config_cache=<userData>/npm-cache`；已存在则跳过。
+- `ensureManagedDsh({node, userDataDir, ...})`：先引导 pnpm（`node npm-cli install --prefix <userData>/tools/pnpm pnpm`，一次性，走镜像），再用 `node pnpm.cjs add @deepseek-ai/dsh --ignore-scripts --store-dir <userData>/pnpm-store --registry https://registry.npmmirror.com` 安装（cwd=`<userData>/dsh`，预写 package.json）；解析 pnpm 的 `Progress: resolved N, reused N, downloaded N, added N` 行实时更新闪屏进度；已存在则跳过。注入 `npm_config_registry=https://registry.npmmirror.com` 与 `npm_config_cache=<userData>/npm-cache`。
 - `resolveNode(options)`：编排入口，返回 `NodeInfo { executable, version, managed, npmCli }`。
 - 进度模型 `NodeProgress { stage, percent?, receivedBytes?, totalBytes?, detail? }`，stage 含 detecting/using-system/downloading/verifying/installing/smoke/installing-dsh/ready。
 
 **注意（实现细节）：**
 
 - Node 官方 Windows 归档平台名是 `win` 不是 `win32`（`node-v{V}-win-x64.zip`）。
-- posix 下处理 Windows 路径要用 `node:path` 的 `win32` 变体（`resolveNpmCli`）。
+- posix 下处理 Windows 路径要用 `node:path` 的 `win32` 变体（`resolveNpmCli`/`nodeCandidates`）。
 - `installManagedNode` 在 rename 到 `userData/node/` 后需**重新计算** executable 路径（staging 路径已失效）。
 - `mkdtempSync` 前先 `mkdirSync(userDataDir, { recursive: true })`。
+- **dsh 用 pnpm 而非 npm 的原因**：npm 首次安装 dsh（193 依赖）实测 ~8 分钟，pnpm 硬链接 store 实测 ~60-90 秒（提速 ~5x）。`--ignore-scripts` 必须加：pnpm 10+ 对存在被忽略的构建脚本会以 `ERR_PNPM_IGNORED_BUILDS` 退出码 1 失败，而 dsh 依赖（node-pty/koffi/protobufjs 等）都有预编译二进制，不需要构建脚本（prepare-dsh 时代已用 `--ignore-scripts` 验证可用）。
+- **受管安装目录布局**：`<userData>/dsh/`（dsh 根，node_modules 为 pnpm 符号链接，实际文件在 `dsh/node_modules/.pnpm/` 虚拟 store）+ `<userData>/pnpm-store/`（硬链接池）+ `<userData>/tools/pnpm/`（pnpm 本体）。
+- `nodeCandidates`：扫描 PATH 之外的常见 node 安装位置（darwin: `/opt/homebrew/bin`、`/usr/local/bin`、`/usr/bin`、`~/.volta`、nvm/fnm 版本目录按版本降序；win32: `Program Files\nodejs`、`LocalAppData\Programs\nodejs`、`~/.volta`）——macOS 双击 .app 启动时 GUI 环境不继承 shell PATH，必须有此兜底才能找到用户已装的 node。
 
 ### 3.4 window-lifecycle.ts — 窗口生命周期
 
@@ -290,7 +293,7 @@ dsh-desktop/
 
 - **代码签名**：未配置签名证书，macOS 会提示「无法验证开发者」，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过。
   - 注意：`electron-builder --dir` 在无证书时只给主程序做 linker-signed 的 ad-hoc 签名，**不会**生成 `Contents/_CodeSignature`。这会导致 `spctl` 报「code has no resources but signature indicates they must be present」（视为"已损坏"），删 quarantine 救不回，别的机器双击即报「app 已损坏，无法打开」。因此 `package-dmg.sh` 在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名，使 `spctl` 变为"rejected/未公证"（可被删 quarantine 绕过）；`移除安全验证.command` 也会在签名缺失/无效时自动重签。
-- **首次启动需联网**：Node 缺失时下载 Node（~50MB）+ dsh 依赖（~260MB 解压）。离线会失败，闪屏给重试按钮。用户可手动装 Node 后重启绕过。
+- **首次启动需联网**：Node 缺失时下载 Node（~50MB）+ dsh 依赖（pnpm 安装 ~60-90 秒，~270MB 解压）。离线会失败，闪屏给重试按钮。用户可手动装 Node 后重启绕过。
 - **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新。
 - **版本角标**：`injectVersionBadge`（`main.ts`）改用 `document.createTextNode` 构建（避开 innerHTML），并在注入前把版本号用 `JSON.stringify` 序列化；保留 MutationObserver 自愈（SPA 导航移除后自动重渲染）与 `DSH_VERSION` 为空时只显示桌面版本一行。`DSH_VERSION` 为**运行时**读取受管 dsh 的 package.json（构建时不可知），在 host 就绪后设置。
 - **受管 Node 校验和**：`node-versions.json` 的 checksums 为空时，受管安装会直接报「no SHA256 checksum」——发布前必须从 SHASUMS256.txt 填入，防止静默安装损坏/被篡改的二进制。

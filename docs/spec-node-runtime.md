@@ -21,7 +21,7 @@
 
 | # | 决策 | 理由 |
 | --- | ------ | ------ |
-| D1 | dsh 改为**受管安装**：`node <npm-cli> install --prefix <userData>/dsh @deepseek-ai/dsh`，再 `node --expose-internals <dsh入口> web` 直接启动 | 设计稿原写 `npx/npm exec`，但 dsh 的 HMR 需要 `--expose-internals`，而 npx/npm exec 不会把该 flag 传给 bin 脚本 → dsh 起不来。受管安装等价满足「纯壳 + 走国内镜像」，且：跨平台无 `.cmd`/shell 坑、dsh 版本可直接从受管目录 package.json 读取（角标解决）、更新可显式控制。 |
+| D1 | dsh 改为**受管安装**：先引导 pnpm（`node <npm-cli> install --prefix <userData>/tools/pnpm pnpm`，走镜像），再 `node pnpm.cjs add @deepseek-ai/dsh --ignore-scripts --store-dir <userData>/pnpm-store`，随后 `node --expose-internals <dsh入口> web` 直接启动 | 设计稿原写 `npx/npm exec`，但 dsh 的 HMR 需要 `--expose-internals`，而 npx/npm exec 不会把该 flag 传给 bin 脚本 → dsh 起不来。受管安装等价满足「纯壳 + 走国内镜像」，且：跨平台无 `.cmd`/shell 坑、dsh 版本可直接从受管目录 package.json 读取（角标解决）、更新可显式控制。**选 pnpm 而非 npm**：npm 首次安装实测 ~8 分钟，pnpm 硬链接 store 实测 ~60-90 秒（提速 ~5x）；`--ignore-scripts` 规避 pnpm 10+ 的 `ERR_PNPM_IGNORED_BUILDS`（dsh 依赖均有预编译二进制，无需构建）。 |
 | D2 | Node 安装到 `userData/node/`（用户级，免管理员） | 不动系统、无需提权、卸载即弃。仅客户端内部使用，不污染 PATH。 |
 | D3 | Node 版本固定 LTS v24.x（可配置），下载后 SHA256 校验 | LTS 受支持时间长；校验防篡改/防损坏。 |
 | D4 | 系统 Node ≥ 18 直接用，不打扰；< 18 视为不可用，自动装受管副本 | dsh 无 engines 声明，18 为保守下限。 |
@@ -113,8 +113,9 @@ export async function resolveNode(options: {
    - 目录重命名为 `userData/node/`（先删旧）。原子性：解压到临时目录再 rename。
    - 冒烟：`node --version`；定位 npm-cli.js。
 3. 受管安装 dsh（`ensureDsh`）：
-   - `node <npmCli> install --prefix <userData>/dsh @deepseek-ai/dsh`
-   - 注入 `npm_config_registry`/`npm_config_cache`（D5）。
+   - 先确保 pnpm：`node <npm-cli> install --prefix <userData>/tools/pnpm pnpm`（一次性，镜像加速，无依赖很快）。
+   - 用 pnpm 装 dsh：`node <pnpm.cjs> add @deepseek-ai/dsh --ignore-scripts --store-dir <userData>/pnpm-store --registry https://registry.npmmirror.com`，cwd=`<userData>/dsh`（预写 package.json）。
+   - 解析 pnpm `Progress: resolved N, reused N, downloaded N, added N` 行 → 闪屏实时进度（`依赖处理 X/N` / `下载依赖 X 个…`）。
    - 幂等：已存在且 package.json 可读 → 跳过（后续可做显式更新）。
 4. 取消：`signal.aborted` 时中止 HTTP 请求、清理临时目录。
 
