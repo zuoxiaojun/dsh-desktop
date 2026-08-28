@@ -140,25 +140,10 @@ function loadIcon(): Electron.NativeImage {
   return nativeImage.createEmpty();
 }
 
-// CSS injected into the web page to:
-// 1. Push sidebar content below macOS traffic lights
-// 2. Make the window draggable from the page
-// 3. Keep all interactive elements clickable
-// Make the page draggable; keep interactive elements clickable
-const DESKTOP_CSS = `
-  html { -webkit-app-region: drag; }
-  button, input, a, select, textarea,
-  [role="button"], [contenteditable],
-  .cm-editor, .cm-content {
-    -webkit-app-region: no-drag !important;
-  }
-`;
-
 async function createMainWindow(): Promise<BrowserWindow> {
   const origin = currentHostOrigin();
   if (origin === undefined) throw new Error("desktop Host is not ready");
 
-  const isMac = process.platform === "darwin";
   const icon = loadIcon();
 
   const window = new BrowserWindow({
@@ -170,19 +155,6 @@ async function createMainWindow(): Promise<BrowserWindow> {
     autoHideMenuBar: true,
     title: APP_NAME,
     icon: icon.isEmpty() ? undefined : icon,
-    frame: false,
-    ...(isMac
-      ? {
-          titleBarStyle: "hiddenInset" as const,
-          trafficLightPosition: { x: 16, y: 18 },
-        }
-      : {
-          titleBarOverlay: {
-            color: "#00000000",
-            symbolColor: "#7f858f",
-            height: 44,
-          },
-        }),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -210,7 +182,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
     return { action: "deny" };
   });
   window.webContents.on("did-finish-load", () => {
-    void window.webContents.insertCSS(DESKTOP_CSS);
+    /* no-op */
   });
 
   await window.loadURL(desktopRendererUrl(origin));

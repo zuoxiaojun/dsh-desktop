@@ -8,8 +8,8 @@
     "dev:desktop": "tsx apps/desktop/scripts/dev-desktop.ts",
     "dev:desktop:rebuild": "tsx apps/desktop/scripts/dev-desktop.ts --rebuild",
     "build": "tsdown -c apps/desktop/tsdown.config.ts",
-    "package": "pnpm run build && electron-builder --dir -c apps/desktop/electron-builder.config.js",
-    "dist": "pnpm run build && electron-builder -c apps/desktop/electron-builder.config.js",
+    "package": "pnpm run build && electron-builder --dir -c apps/desktop/electron-builder.config.cjs",
+    "dist": "pnpm run build && electron-builder -c apps/desktop/electron-builder.config.cjs",
     "typecheck": "tsc --noEmit -p apps/desktop/tsconfig.json"
   },
   "devDependencies": {
