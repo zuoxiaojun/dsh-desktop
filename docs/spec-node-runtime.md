@@ -209,14 +209,16 @@ app.whenReady()
 - `electron-builder.config.cjs`：
   - 删除 `extraResources`（dsh 部分整个删掉）。
   - `files` 增加 `resources/boot.html`、`resources/node-versions.json`（boot-preload 由 tsdown 构建进 lib/）。
+  - **注意**：`files` 会打进 `app.asar`；运行时 `DESKTOP_DIR`（main.mjs 所在目录的上级）解析到 asar 根，Electron 的 fs shim / `loadFile` / preload 均支持 asar 内路径，因此资源无需松散外置（与旧版 version.json/icon.svg 的处理一致）。
 - `tsdown.config.ts`：entry 增加 `src/boot-preload.ts`。
-- `scripts/dev-desktop.ts`：fingerprint 的 sources 增加新源文件（node-manager、boot-window、boot-preload）。
+- `scripts/dev-desktop.ts`：fingerprint 的 sources 增加新源文件（node-manager、boot-window、boot-preload、boot.html、node-versions.json）。
 - `scripts/verify-app.sh`：删除 dsh 入口/版本/依赖检查；改为检查：
-  - `Contents/Resources/node-versions.json` 存在且 JSON 可解析、含当前平台 checksum
-  - `Contents/Resources/boot.html` 存在
-  - `Contents/Resources/app.asar` 内 main 构建产物（或 lib 已打包）
+  - `node-versions.json` 存在（松散 Resources **或 asar 内**，asar 用 `grep -q <name> app.asar` 启发式）且 JSON 可解析、含当前平台 checksum
+  - `boot.html` 存在（松散或 asar 内）
+  - `app.asar` 存在
+  - **不包含** `Resources/dsh`（纯壳反向断言）
   - `version.json`、icon 检查保留
-  - 冒烟：用打包内 Electron Node 跑一个 `require` 不到的纯 Node 检查不再需要（删除 dsh --version 冒烟）
+  - 删除 dsh --version 冒烟
 
 ## 6. 边界与风险
 
@@ -236,6 +238,6 @@ app.whenReady()
 - `pnpm run typecheck` 通过。
 - `pnpm run build` 通过，lib/ 含 main.mjs、preload.mjs、boot-preload.mjs。
 - `node-manager` 纯逻辑有 vitest 单测（解析/平台映射/校验和匹配/版本比较）。
-- `pnpm run dev:desktop` 在本机（已有 Node）冒烟：直接复用系统 Node 启动，无下载流程。
+- `pnpm run dev:desktop` 在本机（已有 Node）冒烟：直接复用系统 Node 启动，无下载流程；受管安装 dsh（npmmirror，~284MB）后 dsh web 就绪（`dsh web: http://127.0.0.1:PORT`），主窗口加载前端 HTTP 200。
 - 手动验证路径（有条件的）：无 Node 环境（临时 PATH 隔离）触发下载 + 进度 + 受管安装。
-- 打包产物不包含 `dsh/` 目录（体积显著下降）。
+- 打包产物不包含 `dsh/` 目录（app.asar ~140K，纯壳成立）；**体积说明**：解包 .app 仍 ~300MB（Electron 43 的 Frameworks 占 ~298MB，与 dsh 无关），DMG 压缩后 ~90MB（原方案 ~287MB DMG 含 dsh）。

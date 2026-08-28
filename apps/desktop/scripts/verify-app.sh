@@ -28,24 +28,36 @@ echo ""
 
 RESOURCES="${APP_PATH}/Contents/Resources"
 
-# 1. node-versions.json 存在、可解析、含当前平台 checksum
+# asar 内包含指定文件名的启发式检查（asar 头含明文文件名）
+asar_contains() {
+  grep -q "$1" "${RESOURCES}/app.asar" 2>/dev/null
+}
+
+# 1. node-versions.json 存在（松散 Resources 或 app.asar 内）、可解析、含当前平台 checksum
 NODE_VERSIONS="${RESOURCES}/node-versions.json"
 if [ ! -f "$NODE_VERSIONS" ]; then
-  echo "❌ node-versions.json not found"
-  exit 1
+  if asar_contains "node-versions.json"; then
+    echo "✅ node-versions.json (embedded in app.asar)"
+    NODE_VERSIONS=""
+  else
+    echo "❌ node-versions.json not found"
+    exit 1
+  fi
 fi
 ARCH=$(uname -m)
 [ "$ARCH" = "x86_64" ] && ARCH="x64"
 NODE_KEY="darwin-${ARCH}"
-SUM=$(node -e "const c=require('${NODE_VERSIONS}');console.log(c.checksums['${NODE_KEY}']||'')")
-if [ -z "$SUM" ]; then
-  echo "⚠️  checksum for ${NODE_KEY} is empty (发布前需从 SHASUMS256.txt 填入)"
-else
-  echo "✅ node-versions.json: v$(node -e "console.log(require('${NODE_VERSIONS}').version)") (${NODE_KEY} checksum set)"
+if [ -n "$NODE_VERSIONS" ]; then
+  SUM=$(node -e "const c=require('${NODE_VERSIONS}');console.log(c.checksums['${NODE_KEY}']||'')")
+  if [ -z "$SUM" ]; then
+    echo "⚠️  checksum for ${NODE_KEY} is empty (发布前需从 SHASUMS256.txt 填入)"
+  else
+    echo "✅ node-versions.json: v$(node -e "console.log(require('${NODE_VERSIONS}').version)") (${NODE_KEY} checksum set)"
+  fi
 fi
 
-# 2. boot.html（闪屏页面）
-if [ -f "${RESOURCES}/boot.html" ]; then
+# 2. boot.html（闪屏页面，松散或 asar 内）
+if [ -f "${RESOURCES}/boot.html" ] || asar_contains "boot.html"; then
   echo "✅ boot.html"
 else
   echo "❌ boot.html missing"
