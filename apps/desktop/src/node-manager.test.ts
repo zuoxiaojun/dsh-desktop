@@ -1,11 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer, type Server } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   checksumFor,
+  downloadFile,
   nodeArchiveSpec,
   nodeDownloadUrl,
   nodeMajor,
   parseNodeVersion,
   resolveNpmCli,
+  sha256File,
 } from "./node-manager.ts";
 import type { NodeVersionsConfig } from "./node-manager.ts";
 
@@ -91,5 +98,56 @@ describe("resolveNpmCli", () => {
     expect(resolveNpmCli("C:\\node\\node.exe", "win32")).toBe(
       "C:\\node\\node_modules\\npm\\bin\\npm-cli.js",
     );
+  });
+});
+
+let server: Server;
+let baseUrl: string;
+let payload: Buffer;
+
+beforeAll(async () => {
+  payload = Buffer.from("hello node download", "utf8");
+  server = createServer((req, res) => {
+    if (req.url === "/node.bin") {
+      res.writeHead(200, { "content-length": String(payload.length) });
+      res.end(payload);
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (address === null || typeof address === "string")
+    throw new Error("no port");
+  baseUrl = `http://127.0.0.1:${address.port}`;
+});
+
+afterAll(() => {
+  server.close();
+});
+
+describe("downloadFile", () => {
+  it("downloads bytes and reports progress", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dsh-dl-"));
+    const dest = join(dir, "node.bin");
+    const events: number[] = [];
+    await downloadFile(`${baseUrl}/node.bin`, dest, (p) => {
+      events.push(p.receivedBytes);
+    });
+    expect(readFileSync(dest)).toEqual(payload);
+    expect(events[events.length - 1]).toBe(payload.length);
+    rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("sha256File", () => {
+  it("hashes a file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dsh-sha-"));
+    const dest = join(dir, "node.bin");
+    await downloadFile(`${baseUrl}/node.bin`, dest);
+    const expected = createHash("sha256").update(payload).digest("hex");
+    expect(await sha256File(dest)).toBe(expected);
+    rmSync(dir, { recursive: true, force: true });
   });
 });

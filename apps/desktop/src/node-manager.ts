@@ -1,5 +1,9 @@
 /** Node.js runtime resolution and managed installation for the desktop shell. */
 
+import { createHash } from "node:crypto";
+import { createReadStream, createWriteStream } from "node:fs";
+import { get as httpGet } from "node:http";
+import { get as httpsGet } from "node:https";
 import { dirname, join, win32 } from "node:path";
 
 const VERSION_RE = /^v(\d+)\.(\d+)\.(\d+)$/u;
@@ -118,4 +122,67 @@ export function resolveNpmCli(
     "bin",
     "npm-cli.js",
   );
+}
+
+export function sha256File(path: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = createHash("sha256");
+    const stream = createReadStream(path);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("end", () => resolve(hash.digest("hex")));
+    stream.on("error", reject);
+  });
+}
+
+export interface DownloadProgress {
+  receivedBytes: number;
+  totalBytes: number | undefined;
+}
+
+export function downloadFile(
+  url: string,
+  destPath: string,
+  onProgress?: (p: DownloadProgress) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onAbort = (): void => {
+      request.destroy(new Error("download aborted"));
+    };
+    const request = (url.startsWith("https:") ? httpsGet : httpGet)(
+      url,
+      { signal },
+      (response) => {
+        if (response.statusCode !== 200) {
+          response.resume();
+          reject(
+            new Error(
+              `download failed: HTTP ${String(response.statusCode)} for ${url}`,
+            ),
+          );
+          return;
+        }
+        const contentLength = Number(
+          response.headers["content-length"] ?? undefined,
+        );
+        const totalBytes = Number.isFinite(contentLength)
+          ? contentLength
+          : undefined;
+        let received = 0;
+        response.on("data", (chunk: Buffer) => {
+          received += chunk.length;
+          onProgress?.({ receivedBytes: received, totalBytes });
+        });
+        const sink = createWriteStream(destPath);
+        response.pipe(sink);
+        sink.on("finish", () => resolve());
+        sink.on("error", reject);
+      },
+    );
+    request.on("error", reject);
+    if (signal !== undefined) {
+      if (signal.aborted) onAbort();
+      else signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
 }
