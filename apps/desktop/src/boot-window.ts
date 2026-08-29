@@ -20,8 +20,8 @@ let retryHandler: (() => void) | undefined;
 
 export function createBootWindow(options: BootWindowOptions): BootWindow {
   const window = new BrowserWindow({
-    width: 460,
-    height: 340,
+    width: 540,
+    height: 420,
     resizable: false,
     maximizable: false,
     fullscreenable: false,
