@@ -92,15 +92,19 @@ dsh-desktop/
 | `pnpm run package` | 构建并打包（unpacked 目录） |
 | `pnpm run dist:mac` / `dist:win` / `dist:linux` / `dist:all` | 构建安装程序 |
 
-## 打包与发布
+## 打包
 
-- **Windows / Linux**：由 GitHub Actions 自动构建并创建 Release——push 一个 `v*` tag（如 `v1.0.4`）即触发。
-- **macOS**：DMG 在本机（mac）构建后上传到 Release：
-  ```sh
-  pnpm run dist:mac
-  gh release upload v<version> "dist/DSH Desktop-<version>-arm64.dmg"
-  ```
-- 产物在 `dist/` 目录下，包体 ~90MB（纯 Electron，不包含 Node/dsh）。
+```sh
+# macOS（unpacked 目录 + 验证 + DMG）
+pnpm run dist:mac
+
+# Windows NSIS / Linux AppImage / 全平台
+pnpm run dist:win
+pnpm run dist:linux
+pnpm run dist:all
+```
+
+产物在 `dist/` 目录下，包体 ~90MB（纯 Electron，不包含 Node/dsh）。
 
 ### macOS 提示
 
