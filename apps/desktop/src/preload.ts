@@ -7,7 +7,7 @@ export interface DesktopBridge {
   readonly platform: NodeJS.Platform;
   readonly versions: Promise<{ desktop: string; dsh: string | undefined }>;
   readonly dsh: {
-    update(): Promise<{ ok: boolean; version?: string; error?: string }>;
+    update(): Promise<{ ok: boolean; version?: string; error?: string; alreadyLatest?: boolean }>;
   };
   readonly desktopUpdate: {
     check(): Promise<{ ok: boolean }>;
@@ -29,6 +29,7 @@ const bridge: DesktopBridge = Object.freeze({
         ok: boolean;
         version?: string;
         error?: string;
+        alreadyLatest?: boolean;
       }>,
   }),
   desktopUpdate: Object.freeze({
