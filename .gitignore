@@ -6,4 +6,3 @@ lib/
 .DS_Store
 *.local.*
 *.log
-apps/desktop/resources/dsh/

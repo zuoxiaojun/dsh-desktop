@@ -72,8 +72,7 @@ dsh-desktop/
 │       ├── tsdown.config.ts
 │       └── tsconfig.json
 ├── docs/
-│   ├── spec-node-runtime.md   # 纯壳架构 spec（决策记录）
-│   └── superpowers/plans/     # 实施计划
+│   └── spec-node-runtime.md   # 纯壳架构 spec（决策记录）
 ├── AGENTS.md              # 设计与代理指南（唯一信息源）
 ├── README.md              # 项目说明
 ├── LICENSE                # MIT

@@ -265,15 +265,14 @@ dsh-desktop/
 │   │   ├── verify-app.sh      # 打包后验证（纯壳结构检查）
 │   │   └── package-dmg.sh     # macOS DMG 打包
 │   ├── resources/             # boot.html、icon、版本号、node-versions、移除安全验证脚本
-│   ├── build/                 # 构建图标（icns/iconset/png）
+│   ├── build/                 # 构建图标（icns/png）
 │   ├── vitest.config.ts
 │   ├── electron-builder.config.cjs
 │   ├── tsdown.config.ts
 │   ├── tsconfig.json
 │   └── package.json
 ├── docs/
-│   ├── spec-node-runtime.md   # 纯壳架构 spec（决策记录）
-│   └── superpowers/plans/     # 实施计划
+│   └── spec-node-runtime.md   # 纯壳架构 spec（决策记录）
 ├── README.md                  # 面向人的概览
 ├── LICENSE
 ├── AGENTS.md                  # 本文件
