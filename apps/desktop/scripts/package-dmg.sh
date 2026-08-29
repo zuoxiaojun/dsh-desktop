@@ -45,14 +45,33 @@ mkdir -p "$STAGING_DIR"
 echo "   Copying .app..."
 cp -R "$APP_PATH" "$STAGING_DIR/"
 
-# 重新进行 ad-hoc 深度签名（无开发者证书时，保证 bundle 签名有效）
-# electron-builder --dir 在无签名证书时只会给主程序做 linker-signed 的 ad-hoc 签名，
-# 不会生成 Contents/_CodeSignature/CodeResources。这里 --deep 重签后，
-# codesign --verify 通过、spctl 变为 rejected（未签名/未公证）。
-# 注意：ad-hoc 签名无法通过 Gatekeeper 公证；下载的安装包在较新的 macOS 上仍会
-# 被标记为「已损坏」，需右键「打开」，或使用 Developer ID + 公证才能双击直达。
-echo "   Re-signing app bundle (ad-hoc, deep)..."
-codesign --force --deep --sign - "${STAGING_DIR}/${APP_NAME}.app"
+# 自签名证书深度签名（避免 ad-hoc 签名被 macOS 判为「已损坏」）
+# ad-hoc 签名（--sign -）在较新的 macOS（尤其 Sequoia 15）上会把下载的安装包判为
+# 「已损坏」且右键也无法打开；改用自签名证书后签名是「真实证书」，Gatekeeper
+# 显示「无法验证开发者 / 安全性阻止打开」，用户「右键 → 打开」即可运行；
+# 只有将来配置 Apple Developer ID + 公证，才能双击直达。
+SIGN_IDENTITY="DSH Desktop Developer"
+SIGN_PASS="${DSH_DESKTOP_SIGN_PASS:-dsh-signing}"
+SIGN_CERT="/tmp/dsh-desktop-signing.crt"
+SIGN_KEY="/tmp/dsh-desktop-signing.key"
+SIGN_P12="/tmp/dsh-desktop-signing.p12"
+
+ensure_signing_identity() {
+  if security find-identity -p codesigning login.keychain 2>/dev/null | grep -q "${SIGN_IDENTITY}"; then
+    return 0
+  fi
+  rm -f "${SIGN_CERT}" "${SIGN_KEY}" "${SIGN_P12}"
+  openssl req -x509 -newkey rsa:2048 -keyout "${SIGN_KEY}" -out "${SIGN_CERT}" -days 3650 -nodes \
+    -subj "/CN=${SIGN_IDENTITY}" \
+    -addext "extendedKeyUsage=codeSigning" -addext "keyUsage=digitalSignature" 2>/dev/null
+  openssl pkcs12 -export -legacy -inkey "${SIGN_KEY}" -in "${SIGN_CERT}" -out "${SIGN_P12}" -passout pass:"${SIGN_PASS}" 2>/dev/null
+  security import "${SIGN_P12}" -k login.keychain -P "${SIGN_PASS}" -T /usr/bin/codesign >/dev/null 2>&1 || return 1
+  rm -f "${SIGN_CERT}" "${SIGN_KEY}" "${SIGN_P12}"
+}
+
+ensure_signing_identity
+echo "   Signing app bundle with self-signed identity..."
+codesign --force --deep --sign "${SIGN_IDENTITY}" "${STAGING_DIR}/${APP_NAME}.app"
 
 # 创建 Applications 链接
 ln -s /Applications "$STAGING_DIR/Applications"
