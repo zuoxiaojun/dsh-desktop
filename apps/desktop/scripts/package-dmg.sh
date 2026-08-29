@@ -50,28 +50,39 @@ cp -R "$APP_PATH" "$STAGING_DIR/"
 # 「已损坏」且右键也无法打开；改用自签名证书后签名是「真实证书」，Gatekeeper
 # 显示「无法验证开发者 / 安全性阻止打开」，用户「右键 → 打开」即可运行；
 # 只有将来配置 Apple Developer ID + 公证，才能双击直达。
+# 用自建临时 keychain（密码可控、显式解锁），本地与 CI 都稳定，不依赖系统 login keychain。
 SIGN_IDENTITY="DSH Desktop Developer"
 SIGN_PASS="${DSH_DESKTOP_SIGN_PASS:-dsh-signing}"
 SIGN_CERT="/tmp/dsh-desktop-signing.crt"
 SIGN_KEY="/tmp/dsh-desktop-signing.key"
 SIGN_P12="/tmp/dsh-desktop-signing.p12"
+SIGN_KEYCHAIN="/tmp/dsh-desktop-signing.keychain"
 
 ensure_signing_identity() {
-  if security find-identity -p codesigning login.keychain 2>/dev/null | grep -q "${SIGN_IDENTITY}"; then
+  if security find-identity -p codesigning "${SIGN_KEYCHAIN}" 2>/dev/null | grep -q "${SIGN_IDENTITY}"; then
     return 0
   fi
-  rm -f "${SIGN_CERT}" "${SIGN_KEY}" "${SIGN_P12}"
+  rm -f "${SIGN_CERT}" "${SIGN_KEY}" "${SIGN_P12}" "${SIGN_KEYCHAIN}"
   openssl req -x509 -newkey rsa:2048 -keyout "${SIGN_KEY}" -out "${SIGN_CERT}" -days 3650 -nodes \
     -subj "/CN=${SIGN_IDENTITY}" \
     -addext "extendedKeyUsage=codeSigning" -addext "keyUsage=digitalSignature" 2>/dev/null
   openssl pkcs12 -export -legacy -inkey "${SIGN_KEY}" -in "${SIGN_CERT}" -out "${SIGN_P12}" -passout pass:"${SIGN_PASS}" 2>/dev/null
-  security import "${SIGN_P12}" -k login.keychain -P "${SIGN_PASS}" -T /usr/bin/codesign >/dev/null 2>&1 || return 1
+  security create-keychain -p "${SIGN_PASS}" "${SIGN_KEYCHAIN}" >/dev/null 2>&1 || return 1
+  security unlock-keychain -p "${SIGN_PASS}" "${SIGN_KEYCHAIN}" >/dev/null 2>&1 || return 1
+  security import "${SIGN_P12}" -k "${SIGN_KEYCHAIN}" -P "${SIGN_PASS}" -T /usr/bin/codesign >/dev/null 2>&1 || return 1
+  security set-keychain-settings -lut 21600 "${SIGN_KEYCHAIN}" >/dev/null 2>&1 || true
   rm -f "${SIGN_CERT}" "${SIGN_KEY}" "${SIGN_P12}"
 }
 
 ensure_signing_identity
+ORIG_SEARCH="$(security list-keychains -d user 2>/dev/null | sed 's/^[[:space:]]*//; s/"//g' | tr '\n' ' ')"
 echo "   Signing app bundle with self-signed identity..."
+security list-keychains -d user -s "${SIGN_KEYCHAIN}" login.keychain >/dev/null 2>&1 || true
 codesign --force --deep --sign "${SIGN_IDENTITY}" "${STAGING_DIR}/${APP_NAME}.app"
+# 清理临时 keychain 并恢复原搜索列表
+security list-keychains -d user -s ${ORIG_SEARCH} >/dev/null 2>&1 || true
+security delete-keychain "${SIGN_KEYCHAIN}" >/dev/null 2>&1 || true
+rm -f "${SIGN_CERT}" "${SIGN_KEY}" "${SIGN_P12}"
 
 # 创建 Applications 链接
 ln -s /Applications "$STAGING_DIR/Applications"
