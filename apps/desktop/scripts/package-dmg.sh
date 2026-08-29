@@ -9,10 +9,22 @@ APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_DIR="$(cd "$APP_DIR/../.." && pwd)"
 
 APP_NAME="DSH Desktop"
-APP_PATH="${PROJECT_DIR}/dist/mac-arm64/${APP_NAME}.app"
+# 自动识别打包架构：electron-builder --dir --mac 在 arm64 机器产出 mac-arm64，x64 机器产出 mac
+if [ -d "${PROJECT_DIR}/dist/mac-arm64" ]; then
+  BUILD_ARCH="mac-arm64"
+  DMG_ARCH="arm64"
+elif [ -d "${PROJECT_DIR}/dist/mac" ]; then
+  BUILD_ARCH="mac"
+  DMG_ARCH="x64"
+else
+  echo "❌ 未找到 .app：dist/mac-arm64 或 dist/mac 均不存在"
+  echo "   请先运行 electron-builder --dir --mac"
+  exit 1
+fi
+APP_PATH="${PROJECT_DIR}/dist/${BUILD_ARCH}/${APP_NAME}.app"
 VERSION="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${APP_DIR}/resources/version.json" | head -1)"
 [ -z "$VERSION" ] && VERSION="1.0.0"
-DMG_NAME="${APP_NAME}-${VERSION}-arm64"
+DMG_NAME="${APP_NAME}-${VERSION}-${DMG_ARCH}"
 DMG_OUTPUT="${PROJECT_DIR}/dist/${DMG_NAME}.dmg"
 STAGING_DIR="/tmp/dsh-dmg-staging"
 
