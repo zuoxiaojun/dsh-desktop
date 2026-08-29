@@ -9,6 +9,9 @@ export interface DesktopBridge {
   readonly dsh: {
     update(): Promise<{ ok: boolean; version?: string; error?: string }>;
   };
+  readonly desktopUpdate: {
+    check(): Promise<{ ok: boolean }>;
+  };
   readonly workspace: {
     pickDirectory(): Promise<string | null>;
   };
@@ -26,6 +29,12 @@ const bridge: DesktopBridge = Object.freeze({
         ok: boolean;
         version?: string;
         error?: string;
+      }>,
+  }),
+  desktopUpdate: Object.freeze({
+    check: () =>
+      ipcRenderer.invoke("dsh-desktop:check-app-update") as Promise<{
+        ok: boolean;
       }>,
   }),
   workspace: Object.freeze({
