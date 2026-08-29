@@ -22,6 +22,9 @@ import { dirname, join, win32 } from "node:path";
 
 const VERSION_RE = /^v(\d+)\.(\d+)\.(\d+)$/u;
 
+/** 受管安装 dsh / pnpm / node 时使用的国内 npm 镜像。 */
+const MANAGED_REGISTRY = "https://registry.npmmirror.com";
+
 export interface NodeProgress {
   stage:
     | "detecting"
@@ -511,6 +514,132 @@ function handlePnpmOutput(
   }
 }
 
+/** 构造查询某包 latest 版本的 registry URL。 */
+export function dshRegistryLatestUrl(registry: string): string {
+  const base = registry.replace(/\/+$/u, "");
+  return base + "/@deepseek-ai%2Fdsh/latest";
+}
+
+/** 从 registry latest 响应里解析版本号。 */
+export function parseLatestDshVersion(body: string): string | undefined {
+  try {
+    const data = JSON.parse(body) as { version?: unknown };
+    return typeof data.version === "string" && data.version.length > 0
+      ? data.version
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** 判断已装版本是否需要更新到 latest（仅比较是否一致，不含 semver 排序）。 */
+export function shouldUpdateDsh(
+  installed: string | undefined,
+  latest: string | undefined,
+): boolean {
+  return latest !== undefined && installed !== latest;
+}
+
+/** 查询 @deepseek-ai/dsh 的 latest 版本；失败/超时返回 undefined（fail-open）。 */
+function getDshLatestVersion(
+  registry: string,
+  timeoutMs = 5000,
+): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const url = new URL(dshRegistryLatestUrl(registry));
+    const get = url.protocol === "https:" ? httpsGet : httpGet;
+    const req = get(url, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk: string) => {
+        body += chunk;
+      });
+      res.on("end", () => {
+        resolve(
+          res.statusCode === 200 ? parseLatestDshVersion(body) : undefined,
+        );
+      });
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error("registry timeout")));
+    req.on("error", () => resolve(undefined));
+  });
+}
+
+export interface DshUpdateStatus {
+  installed?: string;
+  latest?: string;
+  available: boolean;
+}
+
+/** 查询 @deepseek-ai/dsh 的 latest 并与已装版本比对（仅读取，不安装）。 */
+export async function checkDshUpdate(
+  userDataDir: string,
+): Promise<DshUpdateStatus> {
+  const installed = readManagedDshVersion(userDataDir);
+  const latest = await getDshLatestVersion(MANAGED_REGISTRY);
+  return { installed, latest, available: shouldUpdateDsh(installed, latest) };
+}
+
+/** 手动安装 dsh 最新版（用户点击「检查更新」触发）；成功返回新版本，失败返回 undefined。 */
+export async function installDshUpdate(options: {
+  node: NodeInfo;
+  userDataDir: string;
+  onProgress?: (p: NodeProgress) => void;
+  signal?: AbortSignal;
+}): Promise<string | undefined> {
+  const { node, userDataDir, onProgress, signal } = options;
+  try {
+    const latest = await getDshLatestVersion(MANAGED_REGISTRY);
+    const installed = readManagedDshVersion(userDataDir);
+    if (!shouldUpdateDsh(installed, latest) || signal?.aborted) return undefined;
+
+    const env = { ...process.env } as Record<string, string | undefined>;
+    env.npm_config_registry = MANAGED_REGISTRY;
+    env.npm_config_cache = join(userDataDir, "npm-cache");
+    const pnpmCli = await ensurePnpm(node, userDataDir, env, onProgress);
+    const dshDir = join(userDataDir, "dsh");
+    onProgress?.({
+      stage: "installing-dsh",
+      detail: "更新 dsh 到 " + latest + "…",
+    });
+    const status = await new Promise<number | null>((resolve) => {
+      const child = spawn(
+        node.executable,
+        [
+          pnpmCli,
+          "add",
+          "@deepseek-ai/dsh@latest",
+          "--ignore-scripts",
+          "--store-dir",
+          join(userDataDir, "pnpm-store"),
+          "--registry",
+          MANAGED_REGISTRY,
+        ],
+        {
+          cwd: dshDir,
+          env,
+          windowsHide: true,
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+      child.stdout?.on("data", (c: Buffer) => {
+        handlePnpmOutput(c.toString(), onProgress);
+      });
+      child.stderr?.on("data", (c: Buffer) => {
+        process.stderr.write(c);
+        handlePnpmOutput(c.toString(), onProgress);
+      });
+      child.on("error", () => resolve(null));
+      child.on("close", (code) => resolve(code));
+    });
+    const entry = managedDshEntry(userDataDir);
+    if (status !== 0 || !existsSync(entry)) return undefined;
+    return readManagedDshVersion(userDataDir);
+  } catch {
+    return undefined;
+  }
+}
+
 export async function ensureManagedDsh(options: {
   node: NodeInfo;
   userDataDir: string;
@@ -524,7 +653,7 @@ export async function ensureManagedDsh(options: {
     return entry;
   }
   const env = { ...process.env } as Record<string, string | undefined>;
-  env.npm_config_registry = "https://registry.npmmirror.com";
+  env.npm_config_registry = MANAGED_REGISTRY;
   env.npm_config_cache = join(userDataDir, "npm-cache");
   if (signal?.aborted) throw new Error("install aborted");
 
@@ -557,7 +686,7 @@ export async function ensureManagedDsh(options: {
         "--store-dir",
         join(userDataDir, "pnpm-store"),
         "--registry",
-        "https://registry.npmmirror.com",
+        MANAGED_REGISTRY,
       ],
       {
         cwd: dshDir,

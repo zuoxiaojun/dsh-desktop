@@ -154,7 +154,7 @@ HostSupervisor
 
 - `detectSystemNode(platform, minSystemNode)`：PATH 检测 + 常见安装位置扫描（brew/nvm/volta/fnm，见下）+ 版本判断 + npm-cli 定位。
 - `installManagedNode({userDataDir, config, onProgress, signal})`：下载（字节进度）→ SHA256 → 解压 → 冒烟 → 原子落位。
-- `ensureManagedDsh({node, userDataDir, ...})`：先引导 pnpm（`node npm-cli install --prefix <userData>/tools/pnpm pnpm`，一次性，走镜像），再用 `node pnpm.cjs add @deepseek-ai/dsh --ignore-scripts --store-dir <userData>/pnpm-store --registry https://registry.npmmirror.com` 安装（cwd=`<userData>/dsh`，预写 package.json）；解析 pnpm 的 `Progress: resolved N, reused N, downloaded N, added N` 行实时更新闪屏进度；已存在则跳过。注入 `npm_config_registry=https://registry.npmmirror.com` 与 `npm_config_cache=<userData>/npm-cache`。
+- `ensureManagedDsh({node, userDataDir, ...})`：先引导 pnpm（`node npm-cli install --prefix <userData>/tools/pnpm pnpm`，一次性，走镜像），再用 `node pnpm.cjs add @deepseek-ai/dsh --ignore-scripts --store-dir <userData>/pnpm-store --registry https://registry.npmmirror.com` 安装（cwd=`<userData>/dsh`，预写 package.json）；解析 pnpm 的 `Progress: resolved N, reused N, downloaded N, added N` 行实时更新闪屏进度；**dsh 已存在则直接复用，启动不安装、不联网阻塞**。另提供 `checkDshUpdate(userDataDir)`（非阻塞查 registry latest 并与已装版本比对）与 `installDshUpdate({node,userDataDir,...})`（手动 `pnpm add @deepseek-ai/dsh@latest` 更新，供角标「检查更新」按钮调用）。注入 `npm_config_registry=https://registry.npmmirror.com` 与 `npm_config_cache=<userData>/npm-cache`。
 - `resolveNode(options)`：编排入口，返回 `NodeInfo { executable, version, managed, npmCli }`。
 - 进度模型 `NodeProgress { stage, percent?, receivedBytes?, totalBytes?, detail? }`，stage 含 detecting/using-system/downloading/verifying/installing/smoke/installing-dsh/ready。
 
@@ -285,7 +285,7 @@ dsh-desktop/
 | 组件 | 策略 |
 | ---------- | ------------- |
 | Node.js | 系统 Node ≥18 直接复用；否则受管安装 v24 LTS（`node-versions.json` 可配） |
-| dsh | 首次启动受管安装 npm latest（国内镜像），后续幂等复用；版本运行时读取显示 |
+| dsh | 首次启动受管安装 npm latest（国内镜像）；**已装复用；启动异步检查 latest（仅记录，不装）；用户点角标「检查更新」才手动安装并提示重启生效**；版本运行时读取显示 |
 
 - **npm 镜像**：`npm_config_registry=https://registry.npmmirror.com`、`npm_config_cache=<userData>/npm-cache`（不依赖用户全局 `~/.npm`）。
 - **Node 下载镜像**：`mirrorBase` 可配，默认 `https://registry.npmmirror.com/-/binary/node`。

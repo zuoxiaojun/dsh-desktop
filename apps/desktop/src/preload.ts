@@ -6,6 +6,9 @@ import { contextBridge, ipcRenderer } from "electron";
 export interface DesktopBridge {
   readonly platform: NodeJS.Platform;
   readonly versions: Promise<{ desktop: string; dsh: string | undefined }>;
+  readonly dsh: {
+    update(): Promise<{ ok: boolean; version?: string; error?: string }>;
+  };
   readonly workspace: {
     pickDirectory(): Promise<string | null>;
   };
@@ -17,6 +20,14 @@ const bridge: DesktopBridge = Object.freeze({
     desktop: string;
     dsh: string | undefined;
   }>,
+  dsh: Object.freeze({
+    update: () =>
+      ipcRenderer.invoke("dsh-desktop:update-dsh") as Promise<{
+        ok: boolean;
+        version?: string;
+        error?: string;
+      }>,
+  }),
   workspace: Object.freeze({
     pickDirectory: () =>
       ipcRenderer.invoke("dsh-desktop:workspace:pick-directory") as Promise<

@@ -7,6 +7,7 @@ import { env } from "node:process";
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   Menu,
   nativeImage,
@@ -22,10 +23,13 @@ import {
   type HostSupervisor,
 } from "./host-supervisor.ts";
 import {
+  checkDshUpdate,
   ensureManagedDsh,
   hostPathFor,
+  installDshUpdate,
   readManagedDshVersion,
   resolveNode,
+  type NodeInfo,
   type NodeProgress,
   type NodeVersionsConfig,
 } from "./node-manager.ts";
@@ -68,6 +72,10 @@ function readDesktopVersion(): string {
 
 const DESKTOP_VERSION = readDesktopVersion();
 let DSH_VERSION: string | undefined;
+let DSH_LATEST: string | undefined;
+let DSH_UPDATE_AVAILABLE = false;
+let bootNode: NodeInfo | undefined;
+let bootUserDataDir: string | undefined;
 
 const NODE_VERSIONS: NodeVersionsConfig = (() => {
   try {
@@ -116,14 +124,59 @@ function registerIpcHandlers(): void {
     desktop: DESKTOP_VERSION,
     dsh: DSH_VERSION,
   }));
+
+  // 用户点击角标「检查更新」→ 手动安装 dsh 最新版
+  ipcMain.handle("dsh-desktop:update-dsh", async () => {
+    if (!bootNode || !bootUserDataDir) {
+      return { ok: false, error: "not-ready" };
+    }
+    const newVersion = await installDshUpdate({
+      node: bootNode,
+      userDataDir: bootUserDataDir,
+    });
+    if (newVersion === undefined) {
+      return { ok: false, error: "update-failed" };
+    }
+    DSH_UPDATE_AVAILABLE = false;
+    DSH_LATEST = newVersion;
+    await dialog.showMessageBox({
+      type: "info",
+      title: "dsh 更新",
+      message: "dsh 已更新到 v" + newVersion,
+      detail: "重启客户端后生效。",
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+    return { ok: true, version: newVersion };
+  });
 }
 
 function injectVersionBadge(win: BrowserWindow): void {
   const desktopText = JSON.stringify(`DSH Desktop v${DESKTOP_VERSION}`);
   const dshText = DSH_VERSION ? JSON.stringify(`dsh v${DSH_VERSION}`) : "null";
+  const updateVisible = DSH_UPDATE_AVAILABLE && DSH_LATEST !== undefined;
+  const updateLabel = updateVisible
+    ? JSON.stringify(`检查更新 (v${DSH_LATEST})`)
+    : JSON.stringify("检查更新");
+  const updateDisplay = updateVisible ? '""' : '"none"';
   win.webContents
     .executeJavaScript(
-      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const render=()=>{if(document.getElementById(ID))return;if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode("Built by leftxiaojun"));document.body.appendChild(d);};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
+      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const UPID="dsh-desktop-update";const UP_LABEL=${updateLabel};const UP_DISPLAY=${updateDisplay};const render=()=>{if(!document.getElementById(ID)){if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}#dsh-desktop-version button{margin-top:4px;pointer-events:auto;font-family:inherit;font-size:10px;color:#4a90d9;background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}d.appendChild(document.createElement("br"));const b=document.createElement("button");b.id=UPID;b.textContent=UP_LABEL;b.style.display=UP_DISPLAY;b.onclick=async()=>{b.disabled=true;b.textContent="正在更新…";try{await window.dshDesktop?.dsh?.update();b.textContent="已更新，重启客户端后生效";}catch{b.textContent="更新失败，点我重试";b.disabled=false;}};d.appendChild(b);d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode("Built by leftxiaojun"));document.body.appendChild(d);}};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
+    )
+    .catch(() => {
+      /* ignore */
+    });
+}
+
+function refreshDshUpdateBadge(win: BrowserWindow): void {
+  const visible = DSH_UPDATE_AVAILABLE && DSH_LATEST !== undefined;
+  const label = visible
+    ? JSON.stringify(`检查更新 (v${DSH_LATEST})`)
+    : JSON.stringify("检查更新");
+  const display = visible ? '""' : '"none"';
+  win.webContents
+    .executeJavaScript(
+      `(()=>{const b=document.getElementById("dsh-desktop-update");if(b){b.style.display=${display};b.textContent=${label};}})()`,
     )
     .catch(() => {
       /* ignore */
@@ -290,6 +343,8 @@ async function boot(): Promise<void> {
     onProgress,
     signal,
   });
+  bootNode = node;
+  bootUserDataDir = userDataDir;
 
   // 阶段二：受管安装 dsh（首次联网拉取，走国内镜像）
   const dshEntry = await ensureManagedDsh({
@@ -359,6 +414,17 @@ async function boot(): Promise<void> {
   bootWindow = undefined;
   createTray();
   await lifecycle.showWindow();
+
+  // 非阻塞：启动后异步检查 dsh 是否有更新（不阻塞启动、不自动安装），用于角标「检查更新」按钮
+  void checkDshUpdate(userDataDir)
+    .then(({ available, latest }) => {
+      DSH_UPDATE_AVAILABLE = available;
+      DSH_LATEST = latest;
+      if (mainWindow) refreshDshUpdateBadge(mainWindow);
+    })
+    .catch(() => {
+      /* ignore */
+    });
 }
 
 async function handleBootError(error: unknown): Promise<void> {

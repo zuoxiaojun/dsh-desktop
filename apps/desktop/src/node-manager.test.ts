@@ -7,12 +7,15 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   checksumFor,
   downloadFile,
+  dshRegistryLatestUrl,
   nodeArchiveSpec,
   nodeDownloadUrl,
   nodeMajor,
+  parseLatestDshVersion,
   parseNodeVersion,
   resolveNpmCli,
   sha256File,
+  shouldUpdateDsh,
 } from "./node-manager.ts";
 import type { NodeVersionsConfig } from "./node-manager.ts";
 
@@ -149,5 +152,38 @@ describe("sha256File", () => {
     const expected = createHash("sha256").update(payload).digest("hex");
     expect(await sha256File(dest)).toBe(expected);
     rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("dshRegistryLatestUrl", () => {
+  it("builds a latest-version URL and trims trailing slash", () => {
+    expect(dshRegistryLatestUrl("https://registry.npmmirror.com")).toBe(
+      "https://registry.npmmirror.com/@deepseek-ai%2Fdsh/latest",
+    );
+    expect(dshRegistryLatestUrl("https://registry.npmmirror.com/")).toBe(
+      "https://registry.npmmirror.com/@deepseek-ai%2Fdsh/latest",
+    );
+  });
+});
+
+describe("parseLatestDshVersion", () => {
+  it("parses a version from a registry latest body", () => {
+    expect(parseLatestDshVersion('{"version":"0.1.2"}')).toBe("0.1.2");
+  });
+  it("returns undefined on malformed / missing version", () => {
+    expect(parseLatestDshVersion("not json")).toBeUndefined();
+    expect(parseLatestDshVersion("{}")).toBeUndefined();
+    expect(parseLatestDshVersion('{"version":""}')).toBeUndefined();
+  });
+});
+
+describe("shouldUpdateDsh", () => {
+  it("updates when latest differs from installed", () => {
+    expect(shouldUpdateDsh("0.1.1-rc.2", "0.1.2")).toBe(true);
+    expect(shouldUpdateDsh(undefined, "0.1.2")).toBe(true);
+  });
+  it("does not update when already latest or latest unknown", () => {
+    expect(shouldUpdateDsh("0.1.2", "0.1.2")).toBe(false);
+    expect(shouldUpdateDsh("0.1.1-rc.2", undefined)).toBe(false);
   });
 });
