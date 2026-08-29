@@ -205,12 +205,17 @@ function registerIpcHandlers(): void {
     if (!bootNode || !bootUserDataDir) {
       return { ok: false, error: "not-ready" };
     }
+    let available = false;
     try {
-      const status = await checkDshUpdate(bootUserDataDir);
-      if (!status.available) {
-        // 已是 dsh 最新版，无需安装
-        return { ok: true, alreadyLatest: true };
-      }
+      available = (await checkDshUpdate(bootUserDataDir)).available;
+    } catch {
+      // 无法确认版本时按「已是最新」处理（fail-open，不误报失败）
+      available = false;
+    }
+    if (!available) {
+      return { ok: true, alreadyLatest: true };
+    }
+    try {
       const newVersion = await installDshUpdate({
         node: bootNode,
         userDataDir: bootUserDataDir,
