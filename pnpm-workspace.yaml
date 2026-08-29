@@ -3,3 +3,5 @@ allowBuilds:
   esbuild: false
 onlyBuiltDependencies:
   - esbuild
+overrides:
+  "@electron/get": "^5.1.0"
