@@ -63,3 +63,15 @@ rm -rf "$STAGING_DIR"
 
 echo "✅ DMG created: ${DMG_OUTPUT}"
 ls -lh "$DMG_OUTPUT"
+
+# 清理中间产物：只保留最终 DMG
+# electron-builder --dir 留下的 unpacked .app（dist/mac、dist/mac-arm64）与
+# debug/effective-config yml、.DS_Store 都不是交付物，在此一并删除。
+echo ""
+echo "   Cleaning intermediate build artifacts..."
+rm -rf "${PROJECT_DIR}/dist/mac" "${PROJECT_DIR}/dist/mac-arm64"
+rm -f "${PROJECT_DIR}/dist/builder-debug.yml" \
+      "${PROJECT_DIR}/dist/builder-effective-config.yaml" \
+      "${PROJECT_DIR}/dist/.DS_Store"
+echo "✅ Done. Remaining files in dist/:"
+ls -1 "${PROJECT_DIR}/dist" 2>/dev/null || true

@@ -236,6 +236,8 @@ files: ["lib/**", "package.json", "resources/icon.svg",
 
 **`dist:*` 步骤顺序**（顺序很重要）：`build` → `electron-builder --dir` → `verify-app.sh` → `package-dmg.sh`。
 
+**产物清理：** `package-dmg.sh` 打完 DMG 后会删除中间产物（`dist/mac`、`dist/mac-arm64`、`builder-debug.yml`、`builder-effective-config.yaml`、`.DS_Store`），`dist/` 里最终只保留 `.dmg`。
+
 **产物：**
 
 | 平台 | 产物 | 大小 |
