@@ -264,7 +264,7 @@ dsh-desktop/
 │   │   ├── dev-desktop.ts     # 开发启动器（指纹缓存 + 增量构建）
 │   │   ├── verify-app.sh      # 打包后验证（纯壳结构检查）
 │   │   └── package-dmg.sh     # macOS DMG 打包
-│   ├── resources/             # boot.html、icon、版本号、node-versions、移除安全验证脚本
+│   ├── resources/             # boot.html、icon、版本号、node-versions
 │   ├── build/                 # 构建图标（icns/png）
 │   ├── vitest.config.ts
 │   ├── electron-builder.config.cjs
@@ -292,8 +292,7 @@ dsh-desktop/
 
 ## 9. 已知问题
 
-- **代码签名**：未配置签名证书，macOS 会提示「无法验证开发者」，需付费 Apple Developer 账号。DMG 内附 `移除安全验证.command` 脚本可一键绕过。
-  - 注意：`electron-builder --dir` 在无证书时只给主程序做 linker-signed 的 ad-hoc 签名，**不会**生成 `Contents/_CodeSignature`。这会导致 `spctl` 报「code has no resources but signature indicates they must be present」（视为"已损坏"），删 quarantine 救不回，别的机器双击即报「app 已损坏，无法打开」。因此 `package-dmg.sh` 在打 DMG 前对 bundle 做 `codesign --force --deep --sign -` 重建 ad-hoc 签名，使 `spctl` 变为"rejected/未公证"（可被删 quarantine 绕过）；`移除安全验证.command` 也会在签名缺失/无效时自动重签。
+- **代码签名/公证**：未配置签名证书（无 Apple Developer ID），包为 ad-hoc 签名（`codesign --verify` 通过、`spctl` rejected）。从网上下载的安装包会被 Gatekeeper 视为「已损坏」——ad-hoc 无法通过公证，删 quarantine 无效（新 macOS 尤甚）。要「双击直达」需 Apple Developer 证书 + notarization；否则用户需「**右键 → 打开**」绕过。原「移除安全验证.command」脚本在新 macOS 下无效，已移除不再打包。
 - **首次启动需联网**：Node 缺失时下载 Node（~50MB）+ dsh 依赖（pnpm 安装 ~60-90 秒，~270MB 解压）。离线会失败，闪屏给重试按钮。用户可手动装 Node 后重启绕过。
 - **宿主进程 PATH**：打包后 .app 启动的 Electron 主进程 PATH 只有系统最小集（`/usr/bin:/bin:/usr/sbin:/sbin`），dsh 宿主继承后其插件 marketplace `spawnSync("pnpm")` 会 ENOENT。修复：spawn dsh 时注入 `hostPathFor` 构造的完整 PATH（受管 pnpm bin 优先 + node bin + 系统常见路径 + 原 PATH），实测最小 PATH 环境下 `pnpm --version` 可正常解析。
 - **自动更新**：`electron-updater` 未集成，后续版本可通过 GitHub Releases 实现静默更新。
