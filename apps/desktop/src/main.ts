@@ -316,7 +316,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
       webSecurity: true,
       preload: join(DESKTOP_DIR, "lib/preload.mjs"),
     },

@@ -31,7 +31,7 @@ export function createBootWindow(options: BootWindowOptions): BootWindow {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
       preload: options.bootPreloadPath,
     },
   });
