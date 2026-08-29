@@ -143,7 +143,7 @@ async function checkAppUpdate(force: boolean): Promise<void> {
         title: APP_NAME + " 有更新",
         message: "发现新版本 v" + latest,
         detail: "当前版本 v" + DESKTOP_VERSION + "\n是否前往 GitHub 下载新版本？",
-        buttons: ["去下载", "稍后"],
+        buttons: ["去下载", "暂不安装"],
         defaultId: 0,
         cancelId: 1,
       });
@@ -242,7 +242,7 @@ function injectVersionBadge(win: BrowserWindow): void {
   const updateDisplay = '""';
   win.webContents
     .executeJavaScript(
-      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const UPID="dsh-desktop-update";const UP_LABEL=${updateLabel};const UP_DISPLAY=${updateDisplay};const render=()=>{if(!document.getElementById(ID)){if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}#dsh-desktop-version button{margin-top:4px;pointer-events:auto;font-family:inherit;font-size:10px;color:#4a90d9;background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}d.appendChild(document.createElement("br"));const b=document.createElement("button");b.id=UPID;b.textContent=UP_LABEL;b.style.display=UP_DISPLAY;b.onclick=async()=>{b.disabled=true;b.textContent="正在更新…";try{await window.dshDesktop?.dsh?.update();b.textContent="已更新，重启客户端后生效";}catch{b.textContent="更新失败，点我重试";b.disabled=false;}};d.appendChild(b);d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode("Built by zuoxiaojun"));document.body.appendChild(d);}};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
+      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const UPID="dsh-desktop-update";const UP_LABEL=${updateLabel};const UP_DISPLAY=${updateDisplay};const render=()=>{if(!document.getElementById(ID)){if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}#dsh-desktop-version button{margin-top:4px;pointer-events:auto;font-family:inherit;font-size:10px;color:#4a90d9;background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;d.appendChild(document.createTextNode(${desktopText}));const dsh=${dshText};if(dsh){d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(dsh));}d.appendChild(document.createElement("br"));const b=document.createElement("button");b.id=UPID;b.textContent=UP_LABEL;b.style.display=UP_DISPLAY;b.onclick=async()=>{b.disabled=true;b.textContent="正在更新…";try{await window.dshDesktop?.dsh?.update();b.textContent="已更新，重启客户端后生效";}catch{b.textContent="更新失败，点我重试";b.disabled=false;}};d.appendChild(b);d.appendChild(document.createElement("br"));const ab=document.createElement("button");ab.id="dsh-desktop-app-update";ab.textContent="检查桌面版更新";ab.onclick=async()=>{ab.disabled=true;try{await window.dshDesktop?.desktopUpdate?.check();}finally{ab.disabled=false;}};d.appendChild(ab);d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode("Built by zuoxiaojun"));document.body.appendChild(d);}};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
     )
     .catch(() => {
       /* ignore */
@@ -258,16 +258,6 @@ function refreshDshUpdateBadge(win: BrowserWindow): void {
   win.webContents
     .executeJavaScript(
       `(()=>{const b=document.getElementById("dsh-desktop-update");if(b){b.style.display=${display};b.textContent=${label};}})()`,
-    )
-    .catch(() => {
-      /* ignore */
-    });
-}
-
-function injectDesktopUpdateButton(win: BrowserWindow): void {
-  win.webContents
-    .executeJavaScript(
-      `(()=>{const AID="dsh-desktop-app-update";const ASID="dsh-desktop-app-update-style";const render=()=>{if(document.getElementById(AID))return;if(!document.getElementById(ASID)){const s=document.createElement("style");s.id=ASID;s.textContent="#dsh-desktop-app-update{position:fixed;top:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#4a90d9;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:auto;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer}";document.head.appendChild(s);}const b=document.createElement("button");b.id=AID;b.textContent="检查桌面版更新";b.onclick=async()=>{b.disabled=true;try{await window.dshDesktop?.desktopUpdate?.check();}finally{b.disabled=false;}};document.body.appendChild(b);};render();const prev=window.__dshDesktopAppUpdateObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshDesktopAppUpdateObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
     )
     .catch(() => {
       /* ignore */
@@ -340,11 +330,9 @@ async function createMainWindow(): Promise<BrowserWindow> {
   });
   window.webContents.on("did-finish-load", () => {
     injectVersionBadge(window);
-    injectDesktopUpdateButton(window);
   });
   window.webContents.on("did-navigate-in-page", () => {
     injectVersionBadge(window);
-    injectDesktopUpdateButton(window);
   });
 
   await window.loadURL(desktopRendererUrl(origin));
