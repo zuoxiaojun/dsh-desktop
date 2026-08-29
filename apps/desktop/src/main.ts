@@ -45,6 +45,7 @@ import {
 } from "./window-lifecycle.ts";
 
 const APP_NAME = "DSH Desktop";
+const GITHUB_REPO = "zuoxiaojun/dsh-desktop";
 const WINDOW_WIDTH = 1440;
 const WINDOW_HEIGHT = 920;
 const DESKTOP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -74,6 +75,9 @@ const DESKTOP_VERSION = readDesktopVersion();
 let DSH_VERSION: string | undefined;
 let DSH_LATEST: string | undefined;
 let DSH_UPDATE_AVAILABLE = false;
+let APP_UPDATE_AVAILABLE = false;
+let APP_LATEST: string | undefined;
+let APP_UPDATE_URL: string | undefined;
 let bootNode: NodeInfo | undefined;
 let bootUserDataDir: string | undefined;
 
@@ -89,6 +93,76 @@ const NODE_VERSIONS: NodeVersionsConfig = (() => {
 
 function currentHostOrigin(): string | undefined {
   return host?.current?.origin;
+}
+
+function compareVersions(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] ?? 0;
+    const y = pb[i] ?? 0;
+    if (x > y) return 1;
+    if (x < y) return -1;
+  }
+  return 0;
+}
+
+async function checkAppUpdate(force: boolean): Promise<void> {
+  try {
+    const res = await fetch(
+      "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest",
+      {
+        headers: {
+          "User-Agent": "dsh-desktop",
+          Accept: "application/vnd.github+json",
+        },
+      },
+    );
+    if (!res.ok) {
+      if (force) {
+        await dialog.showMessageBox({
+          type: "info",
+          title: APP_NAME,
+          message: "检查应用更新失败",
+          detail: "GitHub 返回 HTTP " + String(res.status),
+        });
+      }
+      return;
+    }
+    const data = (await res.json()) as { tag_name?: string; html_url?: string };
+    const latest = (data.tag_name ?? "").replace(/^v/, "");
+    if (!/^\d+\.\d+\.\d+/.test(latest)) return;
+    const newer = compareVersions(latest, DESKTOP_VERSION) > 0;
+    if (newer) {
+      APP_UPDATE_AVAILABLE = true;
+      APP_LATEST = latest;
+      APP_UPDATE_URL = data.html_url;
+      const { response } = await dialog.showMessageBox({
+        type: "info",
+        title: APP_NAME + " 有更新",
+        message: "发现新版本 v" + latest,
+        detail: "当前版本 v" + DESKTOP_VERSION + "\n是否前往 GitHub 下载新版本？",
+        buttons: ["去下载", "稍后"],
+        defaultId: 0,
+        cancelId: 1,
+      });
+      if (response === 0 && APP_UPDATE_URL) void shell.openExternal(APP_UPDATE_URL);
+    } else if (force) {
+      await dialog.showMessageBox({
+        type: "info",
+        title: APP_NAME,
+        message: "当前已是最新版本 v" + DESKTOP_VERSION,
+      });
+    }
+  } catch {
+    if (force) {
+      await dialog.showMessageBox({
+        type: "info",
+        title: APP_NAME,
+        message: "检查应用更新失败，请检查网络连接",
+      });
+    }
+  }
 }
 
 function isExternalUrl(raw: string): boolean {
@@ -272,6 +346,13 @@ function createTray(): void {
     },
     { type: "separator" },
     {
+      label: "检查应用更新",
+      click: () => {
+        void checkAppUpdate(true);
+      },
+    },
+    { type: "separator" },
+    {
       label: "退出",
       click: () => {
         void requestAppQuit();
@@ -425,6 +506,9 @@ async function boot(): Promise<void> {
     .catch(() => {
       /* ignore */
     });
+
+  // 非阻塞：启动后异步检查应用本身的新版本（GitHub Release），有新版弹窗提示下载
+  void checkAppUpdate(false);
 }
 
 async function handleBootError(error: unknown): Promise<void> {
