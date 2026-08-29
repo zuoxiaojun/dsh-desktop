@@ -43,7 +43,7 @@ Electron 主进程 ←→ dsh web 子进程 ←→ Web 渲染器
 1. **环境初始化** — 检测系统 Node，缺失时自动安装受管 Node + 受管 dsh，闪屏显示进度
 2. **Electron 主进程** — 管理窗口、系统托盘、子进程生命周期、安全策略
 3. **dsh web 子进程** — `node --expose-internals <dsh入口> web`，监听随机端口
-4. **Web 渲染器** — 沙箱化的浏览器窗口，加载 dsh web 前端
+4. **Web 渲染器** — 隔离的浏览器窗口（`contextIsolation` + 无 nodeIntegration），加载 dsh web 前端
 
 ## 项目结构
 
@@ -73,7 +73,6 @@ dsh-desktop/
 │       └── tsconfig.json
 ├── docs/
 │   └── spec-node-runtime.md   # 纯壳架构 spec（决策记录）
-├── AGENTS.md              # 设计与代理指南（唯一信息源）
 ├── README.md              # 项目说明
 ├── LICENSE                # MIT
 ├── package.json
@@ -93,19 +92,26 @@ dsh-desktop/
 | `pnpm run package` | 构建并打包（unpacked 目录） |
 | `pnpm run dist:mac` / `dist:win` / `dist:linux` / `dist:all` | 构建安装程序 |
 
-## 打包
+## 打包与发布
 
-```sh
-# macOS（unpacked 目录 + 验证 + DMG）
-pnpm run dist:mac
+- **Windows / Linux**：由 GitHub Actions 自动构建并创建 Release——push 一个 `v*` tag（如 `v1.0.4`）即触发。
+- **macOS**：DMG 在本机（mac）构建后上传到 Release：
+  ```sh
+  pnpm run dist:mac
+  gh release upload v<version> "dist/DSH Desktop-<version>-arm64.dmg"
+  ```
+- 产物在 `dist/` 目录下，包体 ~90MB（纯 Electron，不包含 Node/dsh）。
 
-# Windows NSIS / Linux AppImage / 全平台
-pnpm run dist:win
-pnpm run dist:linux
-pnpm run dist:all
-```
+### macOS 提示
 
-产物在 `dist/` 目录下。包体 ~90MB（纯 Electron，不包含 Node/dsh）。
+当前 mac 包为**自签名证书签名**（未公证）。首次打开会提示「无法验证开发者 / 安全性阻止」，**右键 → 打开**即可运行；若要双击直达，需配置 Apple Developer 证书 + 公证。
+
+## 更新
+
+右下角版本角标内置两个更新入口：
+
+- **检查 dsh 内核更新**：手动检查/安装 dsh 内核（跟随 npm 最新版）。
+- **检查桌面版更新**：检测到 GitHub 新版本时弹「去下载」，打开 Release 页自行下载安装包覆盖安装（不强制、不自动装）。启动时也会非阻塞检查一次。
 
 ## 设计原则
 
@@ -113,8 +119,6 @@ pnpm run dist:all
 - **所有功能保持与原生 `dsh web` 一致**，不做功能增强
 - **不打包 Node/dsh**，用用户自己的 Node；缺 Node 自动从国内镜像安装
 - **标准原生窗口**，不搞自定义标题栏、不注入 CSS
-
-详见 [AGENTS.md](./AGENTS.md)。
 
 ## 许可证
 
