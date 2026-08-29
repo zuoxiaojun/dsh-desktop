@@ -6,3 +6,6 @@ lib/
 .DS_Store
 *.local.*
 *.log
+
+# AGENTS.md kept local for agent guidance; not uploaded to remote
+AGENTS.md
