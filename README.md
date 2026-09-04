@@ -21,9 +21,26 @@ DSH Desktop 是一个轻量 Electron 桌面壳，在 [DeepSeek Harness](https://
 
 | 平台 | 安装包 | 说明 |
 | --- | --- | --- |
-| macOS | `DSH.Desktop-<ver>-arm64.dmg` | 自签名未公证，首次打开请**右键 → 打开** |
+| macOS | `DSH.Desktop-<ver>-arm64.dmg` | 自签名未公证，首次打开请**右键 → 打开**，或见下方终端命令解除安全校验 |
 | Windows | `DSH.Desktop-<ver>-setup-x64.exe` | 直接安装 |
 | Linux | `DSH.Desktop-<ver>-x86_64.AppImage` | 直接运行 |
+
+> **macOS 打开提示**：安装包为自签名（未公证），从网上下载会被 Gatekeeper 标记为「无法验证开发者 / 安全性阻止」。两种绕过方式（任选其一）：
+>
+> - **右键 → 打开**（最简单，无需终端）；
+> - **用终端解除安全校验**：移除下载带来的 `com.apple.quarantine` 隔离属性：
+
+```sh
+xattr -d com.apple.quarantine "/Applications/DSH Desktop.app"
+```
+
+如需清除 app 的全部扩展属性（含 quarantine），可执行：
+
+```sh
+xattr -cr "/Applications/DSH Desktop.app"
+```
+
+若命令提示 app 不在上述路径，把引号里的 `.app` 路径换成实际的即可。
 
 ## 运行环境
 
