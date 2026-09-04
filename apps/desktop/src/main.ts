@@ -15,6 +15,7 @@ import {
   shell,
   Tray,
   type Event,
+  type MenuItem,
   type MenuItemConstructorOptions,
 } from "electron";
 import {
@@ -78,6 +79,7 @@ let DSH_UPDATE_AVAILABLE = false;
 let APP_UPDATE_AVAILABLE = false;
 let APP_LATEST: string | undefined;
 let APP_UPDATE_URL: string | undefined;
+let dshUpdateMenuItem: MenuItem | undefined;
 let bootNode: NodeInfo | undefined;
 let bootUserDataDir: string | undefined;
 
@@ -200,82 +202,197 @@ function registerIpcHandlers(): void {
     dsh: DSH_VERSION,
   }));
 
-  // 用户点击角标「检查更新」→ 手动安装 dsh 最新版
+  // 用户点击「检查 dsh 内核更新」→ 手动安装 dsh 最新版（主进程菜单 / 托盘 / IPC 共用逻辑）
   ipcMain.handle("dsh-desktop:update-dsh", async () => {
-    if (!bootNode || !bootUserDataDir) {
-      return { ok: false, error: "not-ready" };
-    }
-    let available = false;
-    try {
-      available = (await checkDshUpdate(bootUserDataDir)).available;
-    } catch {
-      // 无法确认版本时按「已是最新」处理（fail-open，不误报失败）
-      available = false;
-    }
-    if (!available) {
-      return { ok: true, alreadyLatest: true };
-    }
-    try {
-      const newVersion = await installDshUpdate({
-        node: bootNode,
-        userDataDir: bootUserDataDir,
-      });
-      if (newVersion === undefined) {
-        return { ok: false, error: "update-failed" };
-      }
-      DSH_UPDATE_AVAILABLE = false;
-      DSH_LATEST = newVersion;
+    const result = await performDshUpdate();
+    if (result.ok && result.version) {
       await dialog.showMessageBox({
         type: "info",
         title: "dsh 更新",
-        message: "dsh 已更新到 v" + newVersion,
+        message: "dsh 已更新到 v" + result.version,
         detail: "重启客户端后生效。",
         buttons: ["好的"],
         defaultId: 0,
       });
-      return { ok: true, version: newVersion };
-    } catch {
-      return { ok: false, error: "update-failed" };
     }
+    return result;
   });
 
-  // 用户点击右上角「检查桌面版更新」→ 手动检查桌面版新版本（GitHub Release）
+  // 用户点击「检查桌面版更新」→ 手动检查桌面版新版本（GitHub Release）
   ipcMain.handle("dsh-desktop:check-app-update", () => {
     void checkAppUpdate(true);
     return { ok: true };
   });
 }
 
-function injectVersionBadge(win: BrowserWindow): void {
-  const desktopText = JSON.stringify(`DSH Desktop v${DESKTOP_VERSION}`);
-  const dshText = DSH_VERSION ? JSON.stringify(`dsh v${DSH_VERSION}`) : "null";
-  const updateVisible = DSH_UPDATE_AVAILABLE && DSH_LATEST !== undefined;
-  const updateLabel = updateVisible
-    ? JSON.stringify(`检查 dsh 内核更新 (v${DSH_LATEST})`)
-    : JSON.stringify("检查 dsh 内核更新");
-  const updateDisplay = '""';
-  win.webContents
-    .executeJavaScript(
-      `(()=>{const ID="dsh-desktop-version";const SID="dsh-desktop-version-style";const UPID="dsh-desktop-update";const UP_LABEL=${updateLabel};const UP_DISPLAY=${updateDisplay};const render=()=>{if(!document.getElementById(ID)){if(!document.getElementById(SID)){const s=document.createElement("style");s.id=SID;s.textContent="#dsh-desktop-version{position:fixed;bottom:8px;right:12px;padding:4px 10px;font-size:11px;line-height:1.5;color:#888;background:rgba(0,0,0,0.06);border-radius:6px;z-index:9999;pointer-events:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:right}#dsh-desktop-version button{margin-top:4px;pointer-events:auto;font-family:inherit;font-size:10px;color:#4a90d9;background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}";document.head.appendChild(s);}const d=document.createElement("div");d.id=ID;const dsh=${dshText};const b=document.createElement("button");b.id=UPID;b.textContent=UP_LABEL;b.style.display=UP_DISPLAY;b.onclick=async()=>{b.disabled=true;b.textContent="正在更新…";try{const r=await window.dshDesktop?.dsh?.update();if(r?.alreadyLatest){b.textContent="已是最新版本";}else if(r?.ok){b.textContent="已更新，重启客户端后生效";}else{b.textContent="更新失败，点我重试";}}catch{b.textContent="更新失败，点我重试";}b.disabled=false;};if(dsh){d.appendChild(document.createTextNode(dsh));d.appendChild(document.createElement("br"));}d.appendChild(b);d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode(${desktopText}));d.appendChild(document.createElement("br"));const ab=document.createElement("button");ab.id="dsh-desktop-app-update";ab.textContent="检查桌面版更新";ab.onclick=async()=>{ab.disabled=true;try{await window.dshDesktop?.desktopUpdate?.check();}finally{ab.disabled=false;}};d.appendChild(ab);d.appendChild(document.createElement("br"));d.appendChild(document.createTextNode("Built by zuoxiaojun"));document.body.appendChild(d);}};render();const prev=window.__dshVersionObserver__;if(prev)prev.disconnect();const o=new MutationObserver(render);window.__dshVersionObserver__=o;o.observe(document.body,{childList:true,subtree:true});})()`,
-    )
-    .catch(() => {
-      /* ignore */
-    });
+function dshUpdateLabel(): string {
+  return DSH_UPDATE_AVAILABLE && DSH_LATEST !== undefined
+    ? `检查 dsh 内核更新 (v${DSH_LATEST})`
+    : "检查 dsh 内核更新";
 }
 
-function refreshDshUpdateBadge(win: BrowserWindow): void {
-  const visible = DSH_UPDATE_AVAILABLE && DSH_LATEST !== undefined;
-  const label = visible
-    ? JSON.stringify(`检查 dsh 内核更新 (v${DSH_LATEST})`)
-    : JSON.stringify("检查 dsh 内核更新");
-  const display = '""';
-  win.webContents
-    .executeJavaScript(
-      `(()=>{const b=document.getElementById("dsh-desktop-update");if(b){b.style.display=${display};b.textContent=${label};}})()`,
-    )
-    .catch(() => {
-      /* ignore */
+function refreshAboutPanel(): void {
+  app.setAboutPanelOptions({
+    applicationName: APP_NAME,
+    applicationVersion: DESKTOP_VERSION,
+    version: DESKTOP_VERSION,
+    copyright: "Built by zuoxiaojun",
+    credits: DSH_VERSION ? `dsh ${DSH_VERSION}` : "dsh 未安装",
+  });
+}
+
+function showAboutDialog(): void {
+  refreshAboutPanel();
+  app.showAboutPanel();
+}
+
+async function performDshUpdate(): Promise<{
+  ok: boolean;
+  version?: string;
+  error?: string;
+  alreadyLatest?: boolean;
+}> {
+  if (!bootNode || !bootUserDataDir) {
+    return { ok: false, error: "not-ready" };
+  }
+  let available = false;
+  try {
+    available = (await checkDshUpdate(bootUserDataDir)).available;
+  } catch {
+    // 无法确认版本时按「已是最新」处理（fail-open，不误报失败）
+    available = false;
+  }
+  if (!available) {
+    return { ok: true, alreadyLatest: true };
+  }
+  try {
+    const newVersion = await installDshUpdate({
+      node: bootNode,
+      userDataDir: bootUserDataDir,
     });
+    if (newVersion === undefined) {
+      return { ok: false, error: "update-failed" };
+    }
+    DSH_UPDATE_AVAILABLE = false;
+    DSH_LATEST = newVersion;
+    DSH_VERSION = newVersion;
+    refreshAboutPanel();
+    return { ok: true, version: newVersion };
+  } catch {
+    return { ok: false, error: "update-failed" };
+  }
+}
+
+async function menuCheckDshUpdate(): Promise<void> {
+  const result = await performDshUpdate();
+  if (result.alreadyLatest) {
+    await dialog.showMessageBox({
+      type: "info",
+      title: "dsh 更新",
+      message: "dsh 已是最新版本",
+    });
+  } else if (result.ok && result.version) {
+    await dialog.showMessageBox({
+      type: "info",
+      title: "dsh 更新",
+      message: `dsh 已更新到 v${result.version}`,
+      detail: "重启客户端后生效。",
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+  } else if (result.error === "not-ready") {
+    await dialog.showMessageBox({
+      type: "info",
+      title: "dsh 更新",
+      message: "dsh 尚未就绪，请稍后重试",
+    });
+  } else {
+    await dialog.showMessageBox({
+      type: "info",
+      title: "dsh 更新",
+      message: "dsh 更新失败，请检查网络连接",
+    });
+  }
+}
+
+function findMenuItemById(
+  menu: Menu,
+  id: string,
+): MenuItem | undefined {
+  for (const item of menu.items) {
+    if (item.id === id) return item;
+    if (item.submenu) {
+      const found = findMenuItemById(item.submenu, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+function refreshDshUpdateMenuItem(): void {
+  if (dshUpdateMenuItem === undefined) return;
+  const label = dshUpdateLabel();
+  refreshAboutPanel();
+  dshUpdateMenuItem.label = label;
+}
+
+function buildApplicationMenu(): void {
+  const isMac = process.platform === "darwin";
+  const template: MenuItemConstructorOptions[] = [];
+  if (isMac) {
+    template.push({
+      label: APP_NAME,
+      submenu: [
+        { label: `关于 ${APP_NAME}`, click: () => showAboutDialog() },
+        { type: "separator" },
+        {
+          id: "dsh-update-item",
+          label: dshUpdateLabel(),
+          click: () => void menuCheckDshUpdate(),
+        },
+        {
+          label: "检查桌面版更新",
+          click: () => void checkAppUpdate(true),
+        },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    });
+    template.push({ role: "fileMenu" });
+    template.push({ role: "editMenu" });
+    template.push({ role: "viewMenu" });
+    template.push({ role: "windowMenu" });
+  } else {
+    template.push({ role: "fileMenu" });
+    template.push({ role: "editMenu" });
+    template.push({ role: "viewMenu" });
+    template.push({ role: "windowMenu" });
+    template.push({
+      label: "帮助",
+      submenu: [
+        { label: `关于 ${APP_NAME}`, click: () => showAboutDialog() },
+        { type: "separator" },
+        {
+          id: "dsh-update-item",
+          label: dshUpdateLabel(),
+          click: () => void menuCheckDshUpdate(),
+        },
+        {
+          label: "检查桌面版更新",
+          click: () => void checkAppUpdate(true),
+        },
+      ],
+    });
+  }
+  const menu = Menu.buildFromTemplate(template);
+  dshUpdateMenuItem = findMenuItemById(menu, "dsh-update-item");
+  Menu.setApplicationMenu(menu);
 }
 
 function hardenSession(): void {
@@ -342,13 +459,6 @@ async function createMainWindow(): Promise<BrowserWindow> {
     if (isExternalUrl(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
-  window.webContents.on("did-finish-load", () => {
-    injectVersionBadge(window);
-  });
-  window.webContents.on("did-navigate-in-page", () => {
-    injectVersionBadge(window);
-  });
-
   await window.loadURL(desktopRendererUrl(origin));
   if (!lifecycle?.isQuitting) window.show();
   return window;
@@ -366,6 +476,12 @@ function createTray(): void {
       },
     },
     { type: "separator" },
+    {
+      label: "检查 dsh 内核更新",
+      click: () => {
+        void menuCheckDshUpdate();
+      },
+    },
     {
       label: "检查应用更新",
       click: () => {
@@ -511,18 +627,20 @@ async function boot(): Promise<void> {
   await host.start();
 
   DSH_VERSION = readManagedDshVersion(userDataDir);
+  refreshAboutPanel();
+  buildApplicationMenu();
 
   bootWindow.close();
   bootWindow = undefined;
   createTray();
   await lifecycle.showWindow();
 
-  // 非阻塞：启动后异步检查 dsh 是否有更新（不阻塞启动、不自动安装），用于角标「检查更新」按钮
+  // 非阻塞：启动后异步检查 dsh 是否有更新（不阻塞启动、不自动安装），用于「检查更新」菜单项
   void checkDshUpdate(userDataDir)
     .then(({ available, latest }) => {
       DSH_UPDATE_AVAILABLE = available;
       DSH_LATEST = latest;
-      if (mainWindow) refreshDshUpdateBadge(mainWindow);
+      refreshDshUpdateMenuItem();
     })
     .catch(() => {
       /* ignore */

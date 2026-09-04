@@ -12,7 +12,7 @@ DSH Desktop 是一个轻量 Electron 桌面壳，在 [DeepSeek Harness](https://
 - **自动装 Node**：首次启动若系统没有 Node（或版本 < 18），自动从**国内镜像 `npmmirror`** 下载 Node LTS 并安装，闪屏显示进度。
 - **国内镜像加速**：dsh 安装走 npm 国内镜像，npm 缓存隔离在应用数据目录。
 - **与官方完全一致**：HMR、全部 dsh 功能原样保留，桌面只加入口。
-- **内置更新检查**：右下角角标可手动检查 dsh 内核与桌面版更新，检测到新版本引导去 GitHub Release 下载。
+- **内置更新检查**：通过应用菜单「关于 / 检查更新」与系统托盘可手动检查 dsh 内核与桌面版更新，检测到新版本引导去 GitHub Release 下载。
 - **多平台**：macOS / Windows / Linux。
 
 ## 安装
