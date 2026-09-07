@@ -1,0 +1,8 @@
+{
+  "//": "Hand-maintained. Values the dsh kernel renamed, per settings key.",
+  "//": "Reviewed on every kernel bump; see docs/spec-kernel-bundling.md section 5.",
+  "agent-presets.default": {
+    "code": "ptc"
+  },
+  "permission.defaultPreset": {}
+}

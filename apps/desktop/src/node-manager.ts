@@ -257,6 +257,11 @@ export async function detectSystemNode(
   return { executable, version, managed: false, npmCli };
 }
 
+/** Root of the managed dsh install; the kernel whose value domain we read back. */
+export function managedDshRoot(userDataDir: string): string {
+  return join(userDataDir, "dsh");
+}
+
 export function managedDshEntry(userDataDir: string): string {
   return join(
     userDataDir,

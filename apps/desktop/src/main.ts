@@ -27,6 +27,7 @@ import {
   checkDshUpdate,
   ensureManagedDsh,
   hostPathFor,
+  managedDshRoot,
   installDshUpdate,
   readManagedDshVersion,
   resolveNode,
@@ -44,6 +45,7 @@ import {
   isInstallerQuitRequest,
   type DesktopLifecycle,
 } from "./window-lifecycle.ts";
+import { checkUserConfig, type CompatReport } from "./config-migration.ts";
 import {
   explainReason,
   readSafeMode,
@@ -601,6 +603,74 @@ function refreshRuntimeMenus(): void {
   }
 }
 
+/**
+ * Report what the kernel-contract check found, and migrate what is certain.
+ *
+ * The installed kernel is the source of truth for config vocabularies, and a
+ * value it renamed (preset code -> ptc in 0.1.2-rc.1) makes session creation
+ * fail with nothing but a console.warn in the web UI - the user sees a dead
+ * button. Runs only after the window is up: a note is worth showing, never
+ * worth delaying or blocking a working session over.
+ */
+async function reportConfigCompat(report: CompatReport): Promise<void> {
+  const issues = report.dangling.length + report.unknownModels.length;
+  if (report.migrated.length > 0) {
+    const lines = report.migrated.map(
+      (entry) => "- " + entry.key + ": " + entry.value + " -> " + String(entry.replacement),
+    );
+    await dialog.showMessageBox({
+      type: "info",
+      title: "已更新配置以匹配当前内核",
+      message: "已自动更新 " + String(report.migrated.length) + " 项客户端配置",
+      detail:
+        lines.join("\n") +
+        "\n\n这些取值在 dsh " +
+        (report.kernelVersion ?? "当前") +
+        " 里已被改名。~/.dsh/settings.yaml 只改动了对应的那一行，其余内容与注释保持不变。" +
+        (issues > 0 ? "\n另有 " + String(issues) + " 项无法自动判断，见下一条提示。" : ""),
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+  }
+  if (issues > 0) {
+    const lines = [...report.dangling, ...report.unknownModels].map(
+      (entry) => "- " + entry.key + ": " + entry.value + "\n  " + entry.reason,
+    );
+    await dialog.showMessageBox({
+      type: "warning",
+      title: "部分配置与当前内核不匹配",
+      message: "有 " + String(issues) + " 项配置取值在当前内核中无效",
+      detail:
+        lines.join("\n") +
+        "\n\n这些值不会被自动改写（避免猜错）。请在「设置」里重新选择对应项，" +
+        "或直接编辑 ~/.dsh/settings.yaml。",
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+  }
+}
+
+/** Re-run the check from the menu, e.g. after the user edited settings by hand. */
+async function manualConfigCheck(): Promise<void> {
+  if (bootUserDataDir === undefined) return;
+  const report = checkUserConfig({
+    desktopDir: DESKTOP_DIR,
+    kernelRoot: managedDshRoot(bootUserDataDir),
+    userDataDir: bootUserDataDir,
+  });
+  if (
+    report.migrated.length + report.dangling.length + report.unknownModels.length ===
+      0
+  ) {
+    await dialog.showMessageBox({
+      type: "info",
+      title: "配置兼容性",
+      message: "客户端配置与当前内核一致",
+    });
+    return;
+  }
+  await reportConfigCompat(report);
+}
 function findMenuItemById(
   menu: Menu,
   id: string,
@@ -638,6 +708,12 @@ function buildApplicationMenu(): void {
           click: () => void menuCheckDshUpdate(),
         },
         {
+          label: "检查配置兼容性",
+          click: () => {
+            void manualConfigCheck();
+          },
+        },
+        {
           label: "检查桌面版更新",
           click: () => void checkAppUpdate(true),
         },
@@ -670,6 +746,12 @@ function buildApplicationMenu(): void {
           id: "dsh-update-item",
           label: dshUpdateLabel(),
           click: () => void menuCheckDshUpdate(),
+        },
+        {
+          label: "检查配置兼容性",
+          click: () => {
+            void manualConfigCheck();
+          },
         },
         {
           label: "检查桌面版更新",
@@ -768,6 +850,12 @@ function trayMenuTemplate(): MenuItemConstructorOptions[] {
       label: "检查 dsh 内核更新",
       click: () => {
         void menuCheckDshUpdate();
+      },
+    },
+    {
+      label: "检查配置兼容性",
+      click: () => {
+        void manualConfigCheck();
       },
     },
     {
@@ -940,7 +1028,16 @@ async function boot(): Promise<void> {
   createTray();
   await lifecycle.showWindow();
   // 只有本轮真的停用了插件才打扰用户；历史停用项安静地留在菜单里。
-  void notifyRecoveredPlugins(recovered);
+  await notifyRecoveredPlugins(recovered);
+  // 内核改过公共配置值域而用户文件里还留着旧值时（预设 code -> ptc 这类），
+  // 建会话会静默失败，所以在窗口起来之后按当前已装内核校验并迁移能确定安全的那部分。
+  void reportConfigCompat(
+    checkUserConfig({
+      desktopDir: DESKTOP_DIR,
+      kernelRoot: managedDshRoot(userDataDir),
+      userDataDir,
+    }),
+  );
 
   // 非阻塞：启动后异步检查 dsh 是否有更新（不阻塞启动、不自动安装），用于「检查更新」菜单项
   void checkDshUpdate(userDataDir)
