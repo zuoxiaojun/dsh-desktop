@@ -14,7 +14,18 @@ export interface ReadinessParser {
   finalize(): string;
 }
 
-/** Assert and normalize one readiness line. */
+/**
+ * Assert one readiness line and return the URL to load.
+ *
+ * The security property is that the Host is reachable only on a loopback HTTP
+ * port it chose: anything remote is rejected, so the shell can never be pointed
+ * at another origin by a rogue child. Path and query are deliberately *not*
+ * constrained. dsh 0.1.2-rc.1 appends a session credential to the readiness
+ * URL (`/?token=...`); normalizing the line to a bare origin silently dropped
+ * it, and a stripped token cannot be recovered later because the port is
+ * ephemeral. So the full href is the load target, and the loopback origin
+ * derived from it stays the authorization boundary for navigation checks.
+ */
 function parseReadinessLine(line: string): string | undefined {
   if (!line.startsWith(READINESS_PREFIX)) return undefined;
   const token = line.slice(READINESS_PREFIX.length).split(/\s/u, 1)[0];
@@ -31,9 +42,6 @@ function parseReadinessLine(line: string): string | undefined {
   if (
     url.protocol !== "http:" ||
     (url.hostname !== "127.0.0.1" && url.hostname !== "localhost") ||
-    url.pathname !== "/" ||
-    url.search !== "" ||
-    url.hash !== "" ||
     !Number.isInteger(port) ||
     port < 1 ||
     port > 65_535
@@ -42,7 +50,16 @@ function parseReadinessLine(line: string): string | undefined {
       `desktop Host readiness URL must be loopback HTTP with an explicit port: ${token}`,
     );
   }
-  return url.origin;
+  return url.href;
+}
+
+/** Loopback origin of a Host URL, the boundary navigation is checked against. */
+export function hostOriginOf(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
 }
 
 /** Create a line parser whose result is stable after readiness. */
@@ -109,7 +126,10 @@ export interface HostSupervisorOptions {
 /** Public identity of one ready Host generation. */
 export interface HostGeneration {
   readonly id: number;
+  /** Loopback origin: the boundary every navigation is checked against. */
   readonly origin: string;
+  /** Full readiness URL, including any credential dsh appended to it. */
+  readonly url: string;
 }
 
 /** Detail reported when the currently owned ready generation exits by itself. */
@@ -121,6 +141,7 @@ interface HostUnexpectedExit extends HostGeneration {
 /** Handle for the desktop-owned Host generations. */
 export interface HostSupervisor {
   readonly current: HostGeneration | undefined;
+  /** Resolves with the full readiness URL to load once the Host is ready. */
   start(): Promise<string>;
   restart(
     reason: string,
@@ -157,6 +178,7 @@ interface HostGenerationState {
   readonly parser: ReadinessParser;
   readonly startupCleanups: Array<() => void>;
   origin?: string;
+  url?: string;
   output: string;
   readinessSettled: boolean;
   exitedSettled: boolean;
@@ -225,6 +247,7 @@ export function createHostSupervisor(
       options.onUnexpectedExit?.({
         id: state.id,
         origin: state.origin,
+        url: state.url ?? state.origin,
         code,
         signal,
       });
@@ -249,12 +272,13 @@ export function createHostSupervisor(
     const acceptChunk = (chunk: string): void => {
       appendOutput(state, chunk);
       try {
-        const origin = state.parser.push(chunk);
-        if (origin === undefined || state.readinessSettled) return;
+        const url = state.parser.push(chunk);
+        if (url === undefined || state.readinessSettled) return;
         state.readinessSettled = true;
-        state.origin = origin;
+        state.url = url;
+        state.origin = hostOriginOf(url);
         cleanupStartup(state);
-        state.readiness.resolve(origin);
+        state.readiness.resolve(url);
       } catch (error) {
         failReadiness(state, error);
         child.kill("SIGTERM");
@@ -345,8 +369,8 @@ export function createHostSupervisor(
         await stopGeneration(previous, { kind: "restart", reason });
       await beforeStart?.();
       const next = createGeneration();
-      const origin = await next.readiness.promise;
-      return { id: next.id, origin };
+      const url = await next.readiness.promise;
+      return { id: next.id, origin: hostOriginOf(url), url };
     });
     restartQueue = operation.then(
       () => undefined,
@@ -379,8 +403,12 @@ export function createHostSupervisor(
 
   return {
     get current() {
-      if (active?.origin === undefined) return undefined;
-      return { id: active.id, origin: active.origin };
+      if (active?.url === undefined) return undefined;
+      return {
+        id: active.id,
+        origin: hostOriginOf(active.url),
+        url: active.url,
+      };
     },
     start,
     restart,
@@ -394,6 +422,32 @@ export interface SpawnDshWebOptions {
   readonly dshEntry: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  /**
+   * Cordis overlay disabling plugins the kernel cannot load. Passed as
+   * `--patch`, a launcher-level option, which is why the Host is booted as
+   * `--profile web` rather than the `web` alias: `dsh web` rejects parent
+   * options outright. Both forms emit the same readiness line.
+   */
+  readonly patchFile?: string;
+}
+
+/**
+ * Build the Host argv: boot the web profile, optionally over its composed
+ * tree with a disable overlay, and let the OS pick a loopback port.
+ *
+ * Flag order is load-bearing — `--profile`/`--patch` are parsed by the dsh
+ * launcher and must precede the app's own flags, which reach the web app.
+ */
+export function dshWebArgs(
+  dshEntry: string,
+  patchFile?: string,
+): string[] {
+  const args = ["--expose-internals", dshEntry, "--profile", "web"];
+  if (patchFile !== undefined && patchFile !== "") {
+    args.push("--patch", patchFile);
+  }
+  args.push("--no-open", "--host", "127.0.0.1", "--port", "0");
+  return args;
 }
 
 function streamAdapter(stream: NodeJS.ReadableStream): HostChild["stdout"] {
@@ -414,16 +468,7 @@ function streamAdapter(stream: NodeJS.ReadableStream): HostChild["stdout"] {
 export function spawnDshWeb(options: SpawnDshWebOptions): HostChild {
   const process = spawn(
     options.nodeExecutable,
-    [
-      "--expose-internals",
-      options.dshEntry,
-      "web",
-      "--no-open",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      "0",
-    ],
+    dshWebArgs(options.dshEntry, options.patchFile),
     {
       cwd: options.cwd,
       env: options.env,

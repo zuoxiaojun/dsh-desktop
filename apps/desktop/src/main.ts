@@ -44,6 +44,21 @@ import {
   isInstallerQuitRequest,
   type DesktopLifecycle,
 } from "./window-lifecycle.ts";
+import {
+  explainReason,
+  readSafeMode,
+  recoveringDetail,
+  safePatchPath,
+  startWithPluginRecovery,
+  withoutDisabled,
+  writeSafeMode,
+  type DisabledPlugin,
+} from "./plugin-recovery.ts";
+import {
+  applyPluginUpdate,
+  resolvePluginUpdate,
+  webProfileDir,
+} from "./plugin-updates.ts";
 
 const APP_NAME = "DSH Desktop";
 const GITHUB_REPO = "zuoxiaojun/dsh-desktop";
@@ -82,6 +97,20 @@ let APP_UPDATE_URL: string | undefined;
 let dshUpdateMenuItem: MenuItem | undefined;
 let bootNode: NodeInfo | undefined;
 let bootUserDataDir: string | undefined;
+/** Everything the plugin recovery and repair flows need after boot returns. */
+let bootDshEntry: string | undefined;
+let bootHostEnv: NodeJS.ProcessEnv | undefined;
+/** Bundles disabled by safe mode, mirrored to userData for the next launch. */
+let safeDisabled: DisabledPlugin[] = [];
+/** Overlay carrying those disables, or undefined when the Host boots bare. */
+let safePatchFile: string | undefined;
+
+/** Recovery relaunches one round per newly attributed bundle. */
+const MAX_RECOVERY_ROUNDS = 8;
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 const NODE_VERSIONS: NodeVersionsConfig = (() => {
   try {
@@ -95,6 +124,18 @@ const NODE_VERSIONS: NodeVersionsConfig = (() => {
 
 function currentHostOrigin(): string | undefined {
   return host?.current?.origin;
+}
+
+/**
+ * Full readiness URL, token included.
+ *
+ * The window must load this rather than the bare origin: dsh puts a session
+ * credential in the readiness URL, the port is ephemeral, and a renderer that
+ * loses the token has no way to authenticate again. Origin stays the security
+ * boundary; the URL stays the load target.
+ */
+function currentHostUrl(): string | undefined {
+  return host?.current?.url ?? host?.current?.origin;
 }
 
 function compareVersions(a: string, b: string): number {
@@ -186,13 +227,13 @@ function hasOrigin(raw: string, expected: string): boolean {
   }
 }
 
-function desktopRendererUrl(origin: string): string {
+function desktopRendererUrl(url: string): string {
   try {
-    const url = new URL(origin);
-    url.searchParams.set("dsh-desktop-platform", process.platform);
-    return url.href;
+    const parsed = new URL(url);
+    parsed.searchParams.set("dsh-desktop-platform", process.platform);
+    return parsed.href;
   } catch {
-    return origin;
+    return url;
   }
 }
 
@@ -315,6 +356,251 @@ async function menuCheckDshUpdate(): Promise<void> {
   }
 }
 
+/**
+ * Recovery arguments bound to a live supervisor and its userData home.
+ *
+ * Safe mode lives in userData rather than the profile so the shell never edits
+ * files dsh owns; every round rewrites the overlay the next spawn will read.
+ */
+function pluginRecovery(
+  supervisor: HostSupervisor,
+  userDataDir: string,
+  onProgress: (p: NodeProgress) => void,
+) {
+  return {
+    startup: (attempt: number) =>
+      attempt === 0
+        ? supervisor.start()
+        : supervisor.restart("plugin-safe-mode"),
+    getDisabled: (): readonly DisabledPlugin[] => safeDisabled,
+    commit: (next: readonly DisabledPlugin[]): void => {
+      safeDisabled = [...next];
+      safePatchFile = writeSafeMode(userDataDir, safeDisabled);
+    },
+    report: (count: number): void => {
+      onProgress({
+        stage: "installing-dsh",
+        detail: recoveringDetail(count),
+      });
+    },
+  };
+}
+
+/** Tell the user what safe mode skipped, and offer the repair path. */
+async function notifyRecoveredPlugins(
+  disabled: readonly DisabledPlugin[],
+): Promise<void> {
+  if (disabled.length === 0) return;
+  const lines = disabled.map(
+    (entry) =>
+      "- " + entry.packageName + "\n  " + explainReason(entry.reason),
+  );
+  const { response } = await dialog.showMessageBox({
+    type: "warning",
+    title: APP_NAME,
+    message: "已停用 " + String(disabled.length) + " 个与当前内核不兼容的插件",
+    detail:
+      lines.join("\n") +
+      "\n\n客户端已跳过这些插件正常启动。需要时可从菜单「已停用插件」检查更新或重新启用。",
+    buttons: ["查看可用更新", "知道了"],
+    defaultId: 1,
+    cancelId: 1,
+  });
+  if (response === 0) await offerPluginUpdates(disabled);
+}
+
+/**
+ * Look upstream once for every disabled plugin and report in a single dialog.
+ *
+ * One summary rather than a per-plugin prompt: these run concurrently, and
+ * stacking app-modal dialogs on top of each other is both noisy and
+ * indistinguishable to the user. Nothing installs from here — the caller still
+ * chooses per plugin from the menu, because a candidate is a guess until the
+ * Host boots with it.
+ */
+async function offerPluginUpdates(
+  disabled: readonly DisabledPlugin[],
+): Promise<void> {
+  const checked = await Promise.all(
+    disabled.map(async (entry) => ({
+      entry,
+      update: await resolvePluginUpdate(
+        entry.packageName,
+        webProfileDir(),
+      ).catch(() => undefined),
+    })),
+  );
+  const found = checked.filter((row) => row.update !== undefined);
+  if (found.length === 0) {
+    await dialog.showMessageBox({
+      type: "info",
+      title: "插件更新",
+      message: "上游暂时没有可用的新版本",
+      detail:
+        "这些插件可能还未适配当前 dsh 内核。可保持停用状态，或联系插件作者后从「已停用插件」菜单再试。",
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+    return;
+  }
+  const detail = found
+    .map(
+      (row) =>
+        "- " +
+        row.entry.packageName +
+        "：" +
+        String(row.update?.label) +
+        "（菜单「已停用插件」→ 检查更新并启用）",
+    )
+    .join("\n");
+  const { response } = await dialog.showMessageBox({
+    type: "info",
+    title: "插件更新",
+    message: "找到 " + String(found.length) + " 个可尝试的插件更新",
+    detail:
+      detail +
+      (found.length < disabled.length
+        ? "\n- 其余 " +
+            String(disabled.length - found.length) +
+            " 个暂无新版本"
+        : "") +
+      "\n\n更新后会自动重新尝试启动；仍不兼容的插件会再次停用。",
+    buttons: ["现在更新并启用", "稍后再说"],
+    defaultId: 0,
+    cancelId: 1,
+  });
+  if (response !== 0) return;
+  for (const row of found) {
+    // Sequential on purpose: each attempt restarts the Host and must be judged
+    // by the boot result before the next plugin is touched.
+    await enablePlugin(row.entry.entryId, true);
+  }
+}
+
+/**
+ * Re-enable one bundle, optionally updating it through dsh's plugin command
+ * first. An update is a guess at compatibility, so the boot decides: if the
+ * plugin still fails it goes back to the disabled set and the user is told the
+ * upstream build is still broken.
+ */
+async function enablePlugin(entryId: string, withUpdate: boolean): Promise<void> {
+  const target = safeDisabled.find((entry) => entry.entryId === entryId);
+  if (target === undefined || host === undefined || bootUserDataDir === undefined)
+    return;
+
+  if (withUpdate) {
+    if (bootNode === undefined || bootDshEntry === undefined) return;
+    const update = await resolvePluginUpdate(target.packageName, webProfileDir());
+    if (update === undefined) {
+      await dialog.showMessageBox({
+        type: "info",
+        title: "插件更新",
+        message: "未找到 " + target.packageName + " 的可用新版本",
+        detail:
+          "上游可能还没适配当前 dsh 内核版本，可联系插件作者，或继续使用停用状态。",
+        buttons: ["好的"],
+        defaultId: 0,
+      });
+      return;
+    }
+    const updated = await applyPluginUpdate({
+      nodeExecutable: bootNode.executable,
+      dshEntry: bootDshEntry,
+      profile: "web",
+      spec: update.candidateSpec,
+      env: bootHostEnv ?? env,
+    });
+    if (!updated) {
+      await dialog.showMessageBox({
+        type: "error",
+        title: "插件更新",
+        message: target.packageName + " 更新失败",
+        detail: "安装未完成，插件保持停用。请检查网络或镜像可用性后重试。",
+        buttons: ["好的"],
+        defaultId: 0,
+      });
+      return;
+    }
+  }
+
+  const next = withoutDisabled(safeDisabled, entryId);
+  safeDisabled = next ?? safeDisabled;
+  safePatchFile = writeSafeMode(bootUserDataDir, safeDisabled);
+  refreshRuntimeMenus();
+  try {
+    await host.restart("plugin-enabled");
+    await dialog.showMessageBox({
+      type: "info",
+      title: "插件已启用",
+      message:
+        target.packageName + (withUpdate ? " 已更新并重新启用" : " 已重新启用"),
+      detail: "立即生效，无需重启客户端。",
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+  } catch (error) {
+    const restored = await startWithPluginRecovery(
+      pluginRecovery(host, bootUserDataDir, () => {}),
+    )
+      .catch((inner: unknown) => {
+        console.error("safe-mode restore failed:", inner);
+        return [] as DisabledPlugin[];
+      });
+    await dialog.showMessageBox({
+      type: "warning",
+      title: "插件仍不兼容",
+      message:
+        target.packageName +
+        (withUpdate ? " 更新后仍与当前内核不兼容" : " 仍与当前内核不兼容"),
+      detail:
+        (restored.length > 0
+          ? "客户端已重新停用 " +
+            String(restored.length) +
+            " 个插件以恢复启动。"
+          : "客户端已恢复停用状态。") +
+        "\n" +
+        explainReason(target.reason),
+      buttons: ["好的"],
+      defaultId: 0,
+    });
+  }
+}
+
+/** Menu rows for the safe-mode set; shared by the app menu and the tray. */
+function disabledPluginsMenuItems(): MenuItemConstructorOptions[] {
+  if (safeDisabled.length === 0) {
+    return [{ label: "已停用插件（无）", enabled: false }];
+  }
+  return [
+    {
+      label: "已停用插件 (" + String(safeDisabled.length) + ")",
+      submenu: safeDisabled.map<MenuItemConstructorOptions>((entry) => ({
+        label: entry.packageName,
+        submenu: [
+          { label: explainReason(entry.reason), enabled: false },
+          { type: "separator" },
+          {
+            label: "检查更新并启用…",
+            click: () => void enablePlugin(entry.entryId, true),
+          },
+          {
+            label: "直接重新启用",
+            click: () => void enablePlugin(entry.entryId, false),
+          },
+        ],
+      })),
+    },
+  ];
+}
+
+/** Rebuild the menus that reflect safe-mode state after it changes. */
+function refreshRuntimeMenus(): void {
+  buildApplicationMenu();
+  if (tray !== undefined) {
+    tray.setContextMenu(Menu.buildFromTemplate(trayMenuTemplate()));
+  }
+}
+
 function findMenuItemById(
   menu: Menu,
   id: string,
@@ -345,6 +631,7 @@ function buildApplicationMenu(): void {
       submenu: [
         { label: `关于 ${APP_NAME}`, click: () => showAboutDialog() },
         { type: "separator" },
+        ...disabledPluginsMenuItems(),
         {
           id: "dsh-update-item",
           label: dshUpdateLabel(),
@@ -378,6 +665,7 @@ function buildApplicationMenu(): void {
       submenu: [
         { label: `关于 ${APP_NAME}`, click: () => showAboutDialog() },
         { type: "separator" },
+        ...disabledPluginsMenuItems(),
         {
           id: "dsh-update-item",
           label: dshUpdateLabel(),
@@ -417,7 +705,9 @@ function loadIcon(): Electron.NativeImage {
 
 async function createMainWindow(): Promise<BrowserWindow> {
   const origin = currentHostOrigin();
-  if (origin === undefined) throw new Error("desktop Host is not ready");
+  const target = currentHostUrl();
+  if (origin === undefined || target === undefined)
+    throw new Error("desktop Host is not ready");
 
   const icon = loadIcon();
 
@@ -459,16 +749,13 @@ async function createMainWindow(): Promise<BrowserWindow> {
     if (isExternalUrl(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
-  await window.loadURL(desktopRendererUrl(origin));
+  await window.loadURL(desktopRendererUrl(target));
   if (!lifecycle?.isQuitting) window.show();
   return window;
 }
 
-function createTray(): void {
-  const icon = loadIcon();
-  tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
-  tray.setToolTip(APP_NAME);
-  const template: MenuItemConstructorOptions[] = [
+function trayMenuTemplate(): MenuItemConstructorOptions[] {
+  return [
     {
       label: "打开主窗口",
       click: () => {
@@ -476,6 +763,7 @@ function createTray(): void {
       },
     },
     { type: "separator" },
+    ...disabledPluginsMenuItems(),
     {
       label: "检查 dsh 内核更新",
       click: () => {
@@ -496,7 +784,13 @@ function createTray(): void {
       },
     },
   ];
-  tray.setContextMenu(Menu.buildFromTemplate(template));
+}
+
+function createTray(): void {
+  const icon = loadIcon();
+  tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
+  tray.setToolTip(APP_NAME);
+  tray.setContextMenu(Menu.buildFromTemplate(trayMenuTemplate()));
   tray.on("click", () => {
     void lifecycle?.showWindow();
   });
@@ -538,6 +832,10 @@ async function boot(): Promise<void> {
   abortController = new AbortController();
   const signal = abortController.signal;
   const userDataDir = app.getPath("userData");
+  // 安全模式是跨启动的记忆：上一轮被停用的插件，本轮继续以 --patch 停用，
+  // 直到用户在菜单里重新启用（或更新后由启动结果判定）。
+  safeDisabled = readSafeMode(userDataDir);
+  safePatchFile = safePatchPath(userDataDir);
 
   setBootRetryHandler(() => {
     void (async () => {
@@ -576,22 +874,27 @@ async function boot(): Promise<void> {
   // 打包后 .app 的 PATH 只有系统最小集，dsh 插件 marketplace 会 spawnSync("pnpm")——
   // 注入完整 PATH（受管 pnpm bin + node bin + 系统路径 + 原 PATH）
   const pnpmBin = join(userDataDir, "tools", "pnpm", "node_modules", ".bin");
+  const hostEnv: NodeJS.ProcessEnv = {
+    ...env,
+    DSH_DESKTOP: "1",
+    PATH: hostPathFor(
+      node,
+      existsSync(pnpmBin) ? pnpmBin : undefined,
+      process.platform as NodeJS.Platform,
+      { PATH: env.PATH },
+    ),
+  };
+  // Retained for the repair flows: updating a plugin shells out to dsh itself.
+  bootDshEntry = dshEntry;
+  bootHostEnv = hostEnv;
   host = createHostSupervisor({
     spawnHost: () =>
       spawnDshWeb({
         nodeExecutable: node.executable,
         dshEntry,
         cwd: env.HOME || process.cwd(),
-        env: {
-          ...env,
-          DSH_DESKTOP: "1",
-          PATH: hostPathFor(
-            node,
-            existsSync(pnpmBin) ? pnpmBin : undefined,
-            process.platform as NodeJS.Platform,
-            { PATH: env.PATH },
-          ),
-        },
+        env: hostEnv,
+        patchFile: safePatchFile,
       }),
     log: (chunk) => process.stderr.write(chunk),
     onUnexpectedExit: ({ code, signal: sig }) => {
@@ -611,8 +914,8 @@ async function boot(): Promise<void> {
   lifecycle = createDesktopLifecycle({
     getWindow: () => mainWindow,
     createWindow: createMainWindow,
-    loadHost: async (w, o) => {
-      await (w as BrowserWindow).loadURL(desktopRendererUrl(o));
+    loadHost: async (w, url) => {
+      await (w as BrowserWindow).loadURL(desktopRendererUrl(url));
     },
     disposeHost: async () => {
       await host?.shutdown();
@@ -624,7 +927,9 @@ async function boot(): Promise<void> {
   });
 
   bootWindow.update({ stage: "installing-dsh", detail: "正在启动 dsh…" });
-  await host.start();
+  const recovered = await startWithPluginRecovery(
+    pluginRecovery(host, userDataDir, onProgress),
+  );
 
   DSH_VERSION = readManagedDshVersion(userDataDir);
   refreshAboutPanel();
@@ -634,6 +939,8 @@ async function boot(): Promise<void> {
   bootWindow = undefined;
   createTray();
   await lifecycle.showWindow();
+  // 只有本轮真的停用了插件才打扰用户；历史停用项安静地留在菜单里。
+  void notifyRecoveredPlugins(recovered);
 
   // 非阻塞：启动后异步检查 dsh 是否有更新（不阻塞启动、不自动安装），用于「检查更新」菜单项
   void checkDshUpdate(userDataDir)

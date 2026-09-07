@@ -467,6 +467,58 @@ export function managedPnpmCli(userDataDir: string): string {
   );
 }
 
+/**
+ * pnpm 主版本锁定：managedPnpmCli() 期望 bin/pnpm.cjs 存在。
+ *
+ * pnpm 12 起 npm 包里只留 bin/pnpm.mjs 一个存根，真实 CLI 由 preinstall/postinstall
+ * 的 install.js 现场下载；而 npm 11（Node 26 自带）默认不再执行这类脚本（install-scripts
+ * 需 allowScripts 显式放行，某些作用域下直接 EALLOWSCRIPTS 报错退出）。两者叠加的结果是：
+ * 装完 pnpm 却找不到 pnpm.cjs，新用户首启即失败。11.x 的 bin/pnpm.cjs 自包含、不需要
+ * 任何生命周期脚本，故钉在主版本上并配 --ignore-scripts（同时也绕开 npm 的脚本审批路径）。
+ * 升级 pnpm 主版本时必须同步确认 bin 布局与 --ignore-scripts 的兼容性。
+ */
+const PNPM_MAJOR = "pnpm@11";
+
+/**
+ * Strip npm configuration inherited from whoever launched the app.
+ *
+ * npm and pnpm export every resolved config item to child processes as
+ * `npm_config_*` (and lifecycle metadata as `npm_lifecycle_*`). A desktop app
+ * launched from `pnpm run dev:desktop`, an npm lifecycle script, or CI therefore
+ * hands our installer a *command-line-precedence* config it never asked for —
+ * and npm 11 rejects a command-line-level `--allow-scripts` inside a
+ * project-scoped install with EALLOWSCRIPTS, killing the pnpm bootstrap. A user
+ * who put `allow-scripts=` in ~/.npmrc (the documented workaround for dsh's
+ * native dependencies) hits this on every such launch.
+ *
+ * The installer is self-describing instead: it sets exactly the config it means
+ * to set, so ambient configuration cannot change what gets installed.
+ */
+export function withoutInheritedNpmConfig(
+  base: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const clean: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(base)) {
+    if (/^npm_config_/iu.test(key)) continue;
+    if (/^npm_lifecycle_/iu.test(key)) continue;
+    if (key === "NPM_CONFIG_DIR" || key === "NODE_OPTIONS") continue;
+    clean[key] = value;
+  }
+  return clean;
+}
+
+/** The three config values our installer always owns. */
+function installerEnv(
+  base: Record<string, string | undefined>,
+  userDataDir: string,
+): Record<string, string | undefined> {
+  const env = withoutInheritedNpmConfig(base);
+  env.npm_config_registry = MANAGED_REGISTRY;
+  env.npm_config_cache = join(userDataDir, "npm-cache");
+  env.npm_config_ignore_scripts = "true";
+  return env;
+}
+
 /** 一次性安装 pnpm（走国内镜像，npm 装无依赖的 pnpm 很快）；已存在则复用。 */
 async function ensurePnpm(
   node: NodeInfo,
@@ -485,7 +537,8 @@ async function ensurePnpm(
         "install",
         "--prefix",
         join(userDataDir, "tools", "pnpm"),
-        "pnpm",
+        "--ignore-scripts",
+        PNPM_MAJOR,
       ],
       { env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
     );
@@ -593,9 +646,7 @@ export async function installDshUpdate(options: {
     const installed = readManagedDshVersion(userDataDir);
     if (!shouldUpdateDsh(installed, latest) || signal?.aborted) return undefined;
 
-    const env = { ...process.env } as Record<string, string | undefined>;
-    env.npm_config_registry = MANAGED_REGISTRY;
-    env.npm_config_cache = join(userDataDir, "npm-cache");
+    const env = installerEnv(process.env, userDataDir);
     const pnpmCli = await ensurePnpm(node, userDataDir, env, onProgress);
     const dshDir = join(userDataDir, "dsh");
     onProgress?.({
@@ -652,9 +703,7 @@ export async function ensureManagedDsh(options: {
     onProgress?.({ stage: "installing-dsh", detail: "dsh 已就绪" });
     return entry;
   }
-  const env = { ...process.env } as Record<string, string | undefined>;
-  env.npm_config_registry = MANAGED_REGISTRY;
-  env.npm_config_cache = join(userDataDir, "npm-cache");
+  const env = installerEnv(process.env, userDataDir);
   if (signal?.aborted) throw new Error("install aborted");
 
   // 1. 确保 pnpm（提速：硬链接 store 比 npm 扁平安装快数倍）
