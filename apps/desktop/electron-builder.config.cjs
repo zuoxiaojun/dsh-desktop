@@ -17,9 +17,10 @@ module.exports = {
 		"build/icon.png",
 	],
 	extraResources: [
+		// Bundle Node.js runtime (platform-specific, downloaded by prepare-node.ts)
 		{
-			from: "resources/",
-			to: "",
+			from: "apps/desktop/resources/",
+			to: ".",
 			filter: ["node-bundle-*"],
 		},
 	],
