@@ -1,7 +1,8 @@
 /** Frameless splash window reporting environment initialization progress. */
 
 import { BrowserWindow, ipcMain, nativeImage } from "electron";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NodeProgress } from "./node-manager.ts";
 
 export interface BootWindow {
@@ -24,7 +25,7 @@ export function createBootWindow(options: BootWindowOptions): BootWindow {
 	let appIcon: Electron.NativeImage | undefined;
 	try {
 		const ico = nativeImage.createFromPath(
-			join(import.meta.dirname, "..", "build/icon.png"),
+			join(dirname(fileURLToPath(import.meta.url)), "..", "build/icon.png"),
 		);
 		if (!ico.isEmpty()) appIcon = ico;
 	} catch {
