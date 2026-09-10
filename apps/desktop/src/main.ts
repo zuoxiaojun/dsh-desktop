@@ -788,6 +788,17 @@ function hardenSession(): void {
 }
 
 function loadIcon(): Electron.NativeImage {
+	// On Windows the SVG->NativeImage conversion is unreliable for tray icons.
+	// PNG works everywhere. macOS SVG fallback for dark/light mode via CSS.
+	try {
+		const pngPath = join(DESKTOP_DIR, "build/icon.png");
+		if (existsSync(pngPath)) {
+			const img = nativeImage.createFromPath(pngPath);
+			if (!img.isEmpty()) return img.resize({ width: 22, height: 22 });
+		}
+	} catch {
+		/* fallback to svg */
+	}
 	try {
 		const svg = readFileSync(join(DESKTOP_DIR, "resources/icon.svg"), "utf8");
 		const img = nativeImage.createFromDataURL(
