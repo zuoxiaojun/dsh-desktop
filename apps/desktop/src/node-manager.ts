@@ -800,9 +800,106 @@ export async function ensureManagedDsh(options: {
 	return entry;
 }
 
+/**
+ * Path to the bundled Node.js archive.
+ *
+ * Checks two locations:
+ * 1. Dev mode / source checkout: <desktopDir>/resources/node-bundle-<platform>-<arch>.<ext>
+ * 2. Packaged app: process.resourcesPath/node-bundle-<platform>-<arch>.<ext>
+ *    (extraResources in electron-builder copies the matching file there)
+ */
+export function bundledNodeArchive(desktopDir: string): string {
+	const platform = process.platform as NodeJS.Platform;
+	const arch = process.arch;
+	const spec = ARCHIVE_SPECS[`${platform}-${arch}`];
+	if (spec === undefined) return "";
+	const archiveName = `node-bundle-${platform}-${arch}.${spec.ext}`;
+	// Dev mode: resources/ is next to lib/
+	const devPath = join(desktopDir, "resources", archiveName);
+	if (existsSync(devPath)) return devPath;
+	// Packaged mode: extraResources copies to process.resourcesPath
+	try {
+		const resourcesPath = (
+			process as NodeJS.Process & { resourcesPath?: string }
+		).resourcesPath;
+		if (resourcesPath !== undefined && resourcesPath !== "") {
+			const pkgPath = join(resourcesPath, archiveName);
+			if (existsSync(pkgPath)) return pkgPath;
+		}
+	} catch {
+		// process.resourcesPath may not be available outside Electron
+	}
+	return "";
+}
+
+/**
+ * Install bundled Node.js from the app resources instead of downloading.
+ * Called when the build-time archive is available.
+ */
+export async function installBundledNode(options: {
+	userDataDir: string;
+	config: NodeVersionsConfig;
+	archivePath: string;
+	onProgress?: (p: NodeProgress) => void;
+	_signal?: AbortSignal;
+}): Promise<NodeInfo> {
+	const { userDataDir, config, onProgress } = options;
+	const platform = process.platform as NodeJS.Platform;
+	const expected = checksumFor(config, platform, process.arch);
+	const root = join(userDataDir, "node");
+	mkdirSync(userDataDir, { recursive: true });
+	const staging = mkdtempSync(join(userDataDir, ".node-tmp-"));
+
+	try {
+		onProgress?.({ stage: "verifying", detail: "SHA256 校验中…" });
+		if (!(await hashMatches(options.archivePath, expected))) {
+			throw new Error(
+				`SHA256 mismatch for bundled Node archive ${options.archivePath}`,
+			);
+		}
+
+		onProgress?.({ stage: "installing", detail: "解压安装中…" });
+		const extractDir = join(staging, "extracted");
+		await extractArchive(options.archivePath, extractDir, platform);
+		const entries = await readdir(extractDir);
+		const entryName = entries[0]; // e.g. node-v24.15.0-darwin-arm64
+		if (entryName === undefined) throw new Error("archive extracted nothing");
+		const extractedRoot = join(extractDir, entryName);
+
+		onProgress?.({ stage: "smoke", detail: "验证安装…" });
+		const stagedExecutable =
+			platform === "win32"
+				? join(extractedRoot, "node.exe")
+				: join(extractedRoot, "bin", "node");
+		const versionOut = await runNodeVersion(stagedExecutable);
+		const version =
+			versionOut === undefined ? undefined : parseNodeVersion(versionOut);
+		if (version === undefined) {
+			throw new Error(
+				`installed Node smoke test failed (${String(versionOut)})`,
+			);
+		}
+
+		const newExecutable =
+			platform === "win32" ? join(root, "node.exe") : join(root, "bin", "node");
+		rmSync(root, { recursive: true, force: true });
+		renameSync(extractedRoot, root);
+		const npmCli = resolveNpmCli(newExecutable, platform);
+		if (!existsSync(npmCli)) {
+			throw new Error(`npm not found under managed Node: ${npmCli}`);
+		}
+		onProgress?.({ stage: "ready", detail: `Node.js ${version}` });
+		return { executable: newExecutable, version, managed: true, npmCli };
+	} finally {
+		rmSync(staging, { recursive: true, force: true });
+	}
+}
+
 export interface ResolveNodeOptions {
 	userDataDir: string;
 	config: NodeVersionsConfig;
+	/** Path to the desktop app directory (for finding bundled resources). */
+	desktopDir?: string;
 	onProgress?: (p: NodeProgress) => void;
 	signal?: AbortSignal;
 }
@@ -810,9 +907,11 @@ export interface ResolveNodeOptions {
 export async function resolveNode(
 	options: ResolveNodeOptions,
 ): Promise<NodeInfo> {
-	const { userDataDir, config, onProgress, signal } = options;
+	const { userDataDir, config, onProgress, signal, desktopDir } = options;
 	const platform = process.platform as NodeJS.Platform;
 	onProgress?.({ stage: "detecting", detail: "检测 Node.js 环境…" });
+
+	// 1. 优先检查系统 Node ≥18
 	const system = await detectSystemNode(platform, config.minSystemNode);
 	if (system !== undefined) {
 		onProgress?.({
@@ -821,6 +920,22 @@ export async function resolveNode(
 		});
 		return system;
 	}
+
+	// 2. 检查打包的内置 Node 资源
+	if (desktopDir !== undefined && desktopDir !== "") {
+		const bundled = bundledNodeArchive(desktopDir);
+		if (bundled !== "" && existsSync(bundled)) {
+			onProgress?.({ stage: "installing", detail: "从内置资源安装 Node.js…" });
+			return installBundledNode({
+				userDataDir,
+				config,
+				archivePath: bundled,
+				onProgress,
+			});
+		}
+	}
+
+	// 3. 兜底：从网络下载
 	onProgress?.({
 		stage: "detecting",
 		detail: "未检测到可用的 Node.js，准备下载…",

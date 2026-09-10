@@ -7,7 +7,8 @@
   "scripts": {
     "dev:desktop": "tsx apps/desktop/scripts/dev-desktop.ts",
     "dev:desktop:rebuild": "tsx apps/desktop/scripts/dev-desktop.ts --rebuild",
-    "build": "tsdown -c apps/desktop/tsdown.config.ts",
+    "prepare-node": "tsx apps/desktop/scripts/prepare-node.ts",
+    "build": "pnpm run prepare-node && tsdown -c apps/desktop/tsdown.config.ts",
     "package": "pnpm run build && electron-builder --dir -c apps/desktop/electron-builder.config.cjs",
     "dist:mac": "pnpm run build && electron-builder --dir --mac -c apps/desktop/electron-builder.config.cjs && bash apps/desktop/scripts/verify-app.sh && bash apps/desktop/scripts/package-dmg.sh",
     "dist:win": "pnpm run build && electron-builder --win --publish never -c apps/desktop/electron-builder.config.cjs",
