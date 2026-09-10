@@ -692,13 +692,24 @@ export async function installDshUpdate(options: {
 			stage: "installing-dsh",
 			detail: "更新 dsh 到 " + latest + "…",
 		});
+		// 清空 package.json 的版本钉 + 删 lockfile，否则 pnpm 读锁文件认为 Already up to date
+		const pkgPath = join(dshDir, "package.json");
+		writeFileSync(
+			pkgPath,
+			JSON.stringify(
+				{ name: "dsh-host", private: true, type: "module" },
+				null,
+				2,
+			),
+		);
+		rmSync(join(dshDir, "pnpm-lock.yaml"), { force: true });
 		const status = await new Promise<number | null>((resolve) => {
 			const child = spawn(
 				node.executable,
 				[
 					pnpmCli,
 					"add",
-					"@deepseek-ai/dsh@latest",
+					"@deepseek-ai/dsh@" + latest + "",
 					"--ignore-scripts",
 					"--store-dir",
 					join(userDataDir, "pnpm-store"),
