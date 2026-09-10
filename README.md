@@ -4,12 +4,13 @@
 
 DSH Desktop 是一个轻量 Electron 桌面壳，在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 官方 `dsh web` 之上提供桌面化体验。
 
-**只加一个桌面入口，不改一行 DSH 核心代码，也不打包任何运行时。**
+**只加一个桌面入口，不改一行 DSH 核心代码，也不打包 DSH 依赖。**
 
 ## 特性
 
-- **纯壳、轻量**：不打包 dsh 及其依赖，安装包约 90MB；运行时使用你**自己的 Node.js**。
-- **自动装 Node**：首次启动若系统没有 Node（或版本 < 18），自动从**国内镜像 `npmmirror`** 下载 Node LTS 并安装，闪屏显示进度。
+- **纯壳、轻量**：不打包 dsh 及其依赖，安装包约 176MB；内置 Node 运行时（~49MB），dsh 首次启动联网安装。
+- **内置 Node 运行时**：构建时从**国内镜像 `npmmirror`** 下载 Node LTS 并压缩进安装包，首次启动直接解压使用，无需联网下载 Node。
+- **系统 Node 优先**：若系统已装 Node ≥18 则优先复用，不干扰已有环境。
 - **国内镜像加速**：dsh 安装走 npm 国内镜像，npm 缓存隔离在应用数据目录。
 - **与官方完全一致**：HMR、全部 dsh 功能原样保留，桌面只加入口。
 - **内置更新检查**：通过应用菜单「关于 / 检查更新」与系统托盘可手动检查 dsh 内核与桌面版更新，检测到新版本引导去 GitHub Release 下载。
@@ -44,7 +45,7 @@ xattr -cr "/Applications/DSH Desktop.app"
 
 ## 运行环境
 
-- Node.js >= 18（运行时缺 Node 由客户端自动安装）
+- Node.js >= 18（缺 Node 时自动解压内置 Node 运行时）
 - macOS / Windows / Linux
 
 ## 本地开发

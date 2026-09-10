@@ -1,21 +1,20 @@
 # Spec：DSH Desktop 纯壳架构（用户 Node + 缺省自装）
 
-> 状态：已批准设计，进入实施。本文记录架构决策，作为实施与后续维护的依据。
-> 关联：AGENTS.md（运行时文档单一维护源，实施完成后同步更新）。
+> 状态：已批准设计，已实施。本文记录架构决策，作为实施与后续维护的依据。
+> 关联：AGENTS.md（运行时文档单一维护源，以 AGENTS.md 为准）。
 
 ## 1. 背景与目标
 
-现状：客户端打包内嵌 `@deepseek-ai/dsh` 全部依赖（`resources/dsh/`，约 260MB），
+初始方案（v1）：客户端打包内嵌 `@deepseek-ai/dsh` 全部依赖（`resources/dsh/`，约 260MB），
 并用 Electron 自带 Node（`ELECTRON_RUN_AS_NODE=1`）运行。包体约 287MB。
 
-目标（用户决策，2026-08）：
+当前方案（v2，2026-08 实施）：
 
-1. **纯壳**：不再打包 dsh 及其依赖，包体降到 ~90MB（纯 Electron）。
-2. **用用户自己的 Node**：启动时检测系统 Node，优先直接使用。
-3. **缺 Node 自动装**：检测不到（或版本过旧）时，从国内镜像
-   （npmmirror `registry.npmmirror.com/-/binary/node/`）下载 Node LTS，
-   免管理员权限安装到应用数据目录，全程闪屏显示初始化进度。
-4. 保持 dsh 官方行为一致（含 HMR，依赖 `--expose-internals`）。
+1. **纯壳**：不再打包 dsh 及其依赖，包体约 176MB（纯 Electron ~90MB + 内置 Node ~49MB）。
+2. **用用户自己的 Node 优先**：启动时检测系统 Node ≥18，优先直接使用。
+3. **内置 Node 运行时**：构建时从国内镜像 npmmirror 下载 Node LTS，SHA256 校验后压缩进安装包（`resources/node-bundle-*`），首次启动直接解压使用，无需联网下载。
+4. **缺 Node 自动装（兜底）**：内置包也找不到时，从网络下载到应用数据目录。
+5. 保持 dsh 官方行为一致（含 HMR，依赖 `--expose-internals`）。
 
 ## 2. 关键决策
 
@@ -32,23 +31,24 @@
 ## 3. 架构总览
 
 ```
-┌────────────────────────────────────────────────────┐
-│ Layer 0: 环境初始化（首次 / 缺 Node 时）              │
-│   检测系统 Node ≥18 → 无则 npmmirror 下载 v24 LTS     │
-│   SHA256 校验 → 解压到 userData/node → 冒烟验证       │
-│   → 受管安装 dsh（node npm-cli install --prefix）     │
+┌────────────────────────────────────────────────────────┐
+│ Layer 0: 环境初始化（首次 / 缺 Node / 缺 dsh 时）     │
+│   ① 检测系统 Node ≥18 → 有则直接复用（managed: false）│
+│   ② 无系统 Node → 解压内置 node-bundle-* 到 userData/ │
+│   ③ 内置包也不可用 → 从 npmmirror 下载 v24 LTS 兜底   │
+│   均经 SHA256 校验 → 冒烟验证 → 受管安装 dsh           │
 │   全程闪屏（boot-window）实时进度                      │
-├────────────────────────────────────────────────────┤
-│ Layer 1: Electron 主进程（壳）                       │
-│   resolveNode() → 系统 node 优先，兜底受管 node       │
+├────────────────────────────────────────────────────────┤
+│ Layer 1: Electron 主进程（壳）                         │
+│   resolveNode() → 系统 node 优先 → 内置 → 网络兜底     │
 │   窗口 | 托盘 | 子进程 | 安全策略（不变）              │
-├────────────────────────────────────────────────────┤
-│ Layer 2: dsh web 子进程                              │
-│   node --expose-internals <userData>/dsh/.../bin.js  │
-│   --no-open --host 127.0.0.1 --port 0 → 就绪 URL     │
-├────────────────────────────────────────────────────┤
-│ Layer 3: Web 渲染器（不变）                           │
-└────────────────────────────────────────────────────┘
+├────────────────────────────────────────────────────────┤
+│ Layer 2: dsh web 子进程                                │
+│   node --expose-internals <userData>/dsh/.../bin.js    │
+│   --no-open --host 127.0.0.1 --port 0 → 就绪 URL       │
+├────────────────────────────────────────────────────────┤
+│ Layer 3: Web 渲染器（不变）                             │
+└────────────────────────────────────────────────────────┘
 ```
 
 数据流与原有 Host 监督模型不变：`HostSupervisor` 管理代际、就绪解析、SIGTERM→SIGKILL、
@@ -89,14 +89,24 @@ export interface NodeVersionsConfig {
   version: string;                    // 受管 Node 版本，如 "24.15.0"
   minSystemNode: number;              // 系统 Node 最低主版本，默认 18
   mirrorBase: string;                 // https://registry.npmmirror.com/-/binary/node
+  mirrorFallback?: string;            // 备用镜像，如 https://nodejs.org/dist
   checksums: Record<string, string>;  // "darwin-arm64" → sha256
 }
 
 export async function resolveNode(options: {
   userDataDir: string;
   config: NodeVersionsConfig;
+  desktopDir?: string;       // 查找内置 node-bundle-* 资源
   onProgress?: (p: NodeProgress) => void;
   signal?: AbortSignal;
+}): Promise<NodeInfo>
+
+export function bundledNodeArchive(desktopDir: string): string;
+export async function installBundledNode(options: {
+  userDataDir: string;
+  config: NodeVersionsConfig;
+  archivePath: string;
+  onProgress?: (p: NodeProgress) => void;
 }): Promise<NodeInfo>
 ```
 
@@ -104,7 +114,9 @@ export async function resolveNode(options: {
 
 1. `detectSystemNode()`：PATH 找 `node`（win 用 `where.exe`，posix 用 `which`），跑 `node --version`
    解析主版本。≥ `minSystemNode` 且能找到 npm-cli.js → 返回系统 Node。
-2. 否则下载受管 Node：
+2. 否则 `bundledNodeArchive(desktopDir)` 查内置资源（dev 模式：`<desktopDir>/resources/node-bundle-*`，打包模式：`process.resourcesPath/node-bundle-*`）。
+   找到 → SHA256 校验 → 解压到 `userData/node/` → 冒烟 → npm-cli 定位。
+4. 否则下载受管 Node：
    - 平台映射：`darwin-arm64`/`darwin-x64` → `tar.gz`；`win32-x64` → `zip`；`linux-x64`/`linux-arm64` → `tar.gz`。
    - URL：`{mirrorBase}/v{version}/node-v{version}-{platform}-{arch}.{ext}`。
    - 流式下载到 `userData/.node-tmp-<rand>/`，用 `content-length` 计算百分比，节流上报。
@@ -112,12 +124,12 @@ export async function resolveNode(options: {
    - 解压：posix 用系统 `tar -xzf`（macOS/Linux 自带）；win 用 PowerShell `Expand-Archive`。
    - 目录重命名为 `userData/node/`（先删旧）。原子性：解压到临时目录再 rename。
    - 冒烟：`node --version`；定位 npm-cli.js。
-3. 受管安装 dsh（`ensureDsh`）：
+5. 受管安装 dsh（`ensureDsh`）：
    - 先确保 pnpm：`node <npm-cli> install --prefix <userData>/tools/pnpm pnpm`（一次性，镜像加速，无依赖很快）。
    - 用 pnpm 装 dsh：`node <pnpm.cjs> add @deepseek-ai/dsh --ignore-scripts --store-dir <userData>/pnpm-store --registry https://registry.npmmirror.com`，cwd=`<userData>/dsh`（预写 package.json）。
    - 解析 pnpm `Progress: resolved N, reused N, downloaded N, added N` 行 → 闪屏实时进度（`依赖处理 X/N` / `下载依赖 X 个…`）。
    - 幂等：已存在且 package.json 可读 → 跳过（后续可做显式更新）。
-4. 取消：`signal.aborted` 时中止 HTTP 请求、清理临时目录。
+6. 取消：`signal.aborted` 时中止 HTTP 请求、清理临时目录。
 
 npm-cli.js 定位：
 
@@ -165,7 +177,7 @@ npm-cli.js 定位：
 app.whenReady()
  → boot()
    → createBootWindow() + show()
-   → resolveNode({userDataDir: app.getPath("userData"), ...})   // 含 ensureDsh，全程进度
+   → resolveNode({userDataDir, desktopDir, ...})  // 系统→内置→网络兜底，含 ensureDsh，全程进度
    → createHostSupervisor({ spawnHost: () => spawnDshWeb(node) })
    → hardenSession(); registerIpcHandlers()
    → createDesktopLifecycle(...)（loadHost 等不变）
@@ -207,14 +219,17 @@ app.whenReady()
 - 删除：`apps/desktop/scripts/prepare-dsh.ts`、`apps/desktop/resources/dsh/`（260MB 直接消失）。
 - 根 `package.json`：`prepare:dsh` 从 `package`/`dist:*` 脚本链中移除。
 - `apps/desktop/package.json`：删除依赖 `@deepseek-ai/dsh`。
+- 新增 `scripts/prepare-node.ts`：构建时下载 Node 归档，SHA256 校验后压缩到 `resources/node-bundle-<platform>-<arch>.<ext>`。
 - `electron-builder.config.cjs`：
-  - 删除 `extraResources`（dsh 部分整个删掉）。
+  - 删除 `extraResources` 的 dsh 部分，改为 include Node bundle：
+    `{ from: "apps/desktop/resources/", to: ".", filter: ["node-bundle-*"] }`
   - `files` 增加 `resources/boot.html`、`resources/node-versions.json`（boot-preload 由 tsdown 构建进 lib/）。
   - **注意**：`files` 会打进 `app.asar`；运行时 `DESKTOP_DIR`（main.mjs 所在目录的上级）解析到 asar 根，Electron 的 fs shim / `loadFile` / preload 均支持 asar 内路径，因此资源无需松散外置（与旧版 version.json/icon.svg 的处理一致）。
 - `tsdown.config.ts`：entry 增加 `src/boot-preload.ts`。
 - `scripts/dev-desktop.ts`：fingerprint 的 sources 增加新源文件（node-manager、boot-window、boot-preload、boot.html、node-versions.json）。
 - `scripts/verify-app.sh`：删除 dsh 入口/版本/依赖检查；改为检查：
   - `node-versions.json` 存在（松散 Resources **或 asar 内**，asar 用 `grep -q <name> app.asar` 启发式）且 JSON 可解析、含当前平台 checksum
+  - `node-bundle-<platform>-<arch>.<ext>` 存在（松散 Resources）
   - `boot.html` 存在（松散或 asar 内）
   - `app.asar` 存在
   - **不包含** `Resources/dsh`（纯壳反向断言）
@@ -225,8 +240,8 @@ app.whenReady()
 
 | 风险 | 对策 |
 | ------ | ------ |
-| 首次启动需联网（Node + dsh） | 闪屏明确提示；下载失败自动重试 ≤2 次；最终失败给「重试」按钮 + 手动装 Node 提示 |
-| 镜像不可达/被墙 | mirrorBase 可配置；失败时错误信息给出官方 nodejs.org 下载指引 |
+| 首次启动需联网（仅 dsh） | 闪屏明确提示；安装失败自动重试；最终失败给「重试」按钮。Node 已内置无需联网 |
+| 镜像不可达/被墙 | mirrorBase 可配置；构建时 prepare-node.ts 失败可配 mirrorFallback（默认 nodejs.org）；运行时兜底下载同样走镜像/备用 |
 | Gatekeeper/SmartScreen | 下载走应用自身 HTTP 代码（非浏览器下载），不产生 quarantine/MOTW 标记，无「无法验证开发者」弹窗；解压免提权 |
 | Windows `.cmd`/shell 坑 | 一律 `spawn(node, [...])` 直启绝对路径，不经 shell；npm 操作走 npm-cli.js |
 | 校验失败/解压损坏 | SHA256 校验失败删除重下；解压到临时目录再原子 rename |
@@ -241,4 +256,4 @@ app.whenReady()
 - `node-manager` 纯逻辑有 vitest 单测（解析/平台映射/校验和匹配/版本比较）。
 - `pnpm run dev:desktop` 在本机（已有 Node）冒烟：直接复用系统 Node 启动，无下载流程；受管安装 dsh（npmmirror，~284MB）后 dsh web 就绪（`dsh web: http://127.0.0.1:PORT`），主窗口加载前端 HTTP 200。
 - 手动验证路径（有条件的）：无 Node 环境（临时 PATH 隔离）触发下载 + 进度 + 受管安装。
-- 打包产物不包含 `dsh/` 目录（app.asar ~140K，纯壳成立）；**体积说明**：解包 .app 仍 ~300MB（Electron 43 的 Frameworks 占 ~298MB，与 dsh 无关），DMG 压缩后 ~90MB（原方案 ~287MB DMG 含 dsh）。
+- 打包产物不包含 `dsh/` 目录（app.asar ~140K，纯壳成立）；**体积说明**：解包 .app 约 ~350MB（Electron Frameworks ~298MB + 内置 Node 归档 ~51MB），DMG 压缩后约 ~176MB（原方案 ~287MB DMG 含 dsh）。
