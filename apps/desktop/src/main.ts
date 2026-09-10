@@ -788,13 +788,13 @@ function hardenSession(): void {
 }
 
 function loadIcon(): Electron.NativeImage {
-	// On Windows the SVG->NativeImage conversion is unreliable for tray icons.
-	// PNG works everywhere. macOS SVG fallback for dark/light mode via CSS.
+	// Returns full-size PNG for window icons (512x512).
+	// SVG fallback for legacy macOS dark/light mode support.
 	try {
 		const pngPath = join(DESKTOP_DIR, "build/icon.png");
 		if (existsSync(pngPath)) {
 			const img = nativeImage.createFromPath(pngPath);
-			if (!img.isEmpty()) return img.resize({ width: 22, height: 22 });
+			if (!img.isEmpty()) return img;
 		}
 	} catch {
 		/* fallback to svg */
@@ -808,6 +808,22 @@ function loadIcon(): Electron.NativeImage {
 	} catch {
 		/* fallback */
 	}
+	return nativeImage.createEmpty();
+}
+
+/** Smaller icon for the system tray (22x22). Uses PNG for reliability. */
+function loadTrayIcon(): Electron.NativeImage {
+	try {
+		const pngPath = join(DESKTOP_DIR, "build/icon.png");
+		if (existsSync(pngPath)) {
+			const img = nativeImage.createFromPath(pngPath);
+			if (!img.isEmpty()) return img.resize({ width: 22, height: 22 });
+		}
+	} catch {
+		/* fallback */
+	}
+	const full = loadIcon();
+	if (!full.isEmpty()) return full.resize({ width: 22, height: 22 });
 	return nativeImage.createEmpty();
 }
 
@@ -901,7 +917,7 @@ function trayMenuTemplate(): MenuItemConstructorOptions[] {
 }
 
 function createTray(): void {
-	const icon = loadIcon();
+	const icon = loadTrayIcon();
 	tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
 	tray.setToolTip(APP_NAME);
 	tray.setContextMenu(Menu.buildFromTemplate(trayMenuTemplate()));
