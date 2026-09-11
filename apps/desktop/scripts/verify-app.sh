@@ -64,14 +64,6 @@ else
   exit 1
 fi
 
-# 2b. config-renames.json（内核改名表；缺失会让配置自动迁移静默失效，见 AGENTS §3.8）
-if asar_contains "config-renames.json"; then
-  echo "✅ config-renames.json (embedded in app.asar)"
-else
-  echo "❌ config-renames.json missing（生产版改名表为空，配置迁移不会生效）"
-  exit 1
-fi
-
 # 2c. 主进程与 preload 脚本
 for entry in main.mjs preload.mjs boot-preload.mjs; do
   if asar_contains "$entry"; then

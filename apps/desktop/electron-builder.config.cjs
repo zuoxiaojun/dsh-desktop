@@ -12,9 +12,8 @@ module.exports = {
 		"package.json",
 		"resources/icon.svg",
 		"resources/boot.html",
-		// 运行时读取的清单/映射（node-versions、version、config-renames）一并打包。
-		// 用通配符而不是逐个列举：曾漏列 config-renames.json，导致生产版改名表恒为空、
-		// 配置自动迁移永不触发（dev 模式文件在磁盘上，看不出来）。
+		// 运行时读取的清单（node-versions、version）一并打包。
+		// 用通配符而不是逐个列举，免得上新清单时又漏列。
 		"resources/*.json",
 		"build/icon.png",
 	],

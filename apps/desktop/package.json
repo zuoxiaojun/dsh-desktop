@@ -1,6 +1,6 @@
 {
   "name": "dsh-desktop",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "private": true,
   "description": "DSH Desktop - Electron client for DeepSeek Harness",
   "main": "lib/main.mjs",
