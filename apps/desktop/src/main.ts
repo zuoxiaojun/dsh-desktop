@@ -169,7 +169,7 @@ async function checkAppUpdate(force: boolean): Promise<void> {
 				await dialog.showMessageBox({
 					type: "info",
 					title: APP_NAME,
-					message: "检查应用更新失败",
+					message: "检查桌面版更新失败",
 					detail: "GitHub 返回 HTTP " + String(res.status),
 				});
 			}
@@ -207,7 +207,7 @@ async function checkAppUpdate(force: boolean): Promise<void> {
 			await dialog.showMessageBox({
 				type: "info",
 				title: APP_NAME,
-				message: "检查应用更新失败，请检查网络连接",
+				message: "检查桌面版更新失败，请检查网络连接",
 			});
 		}
 	}
@@ -321,6 +321,7 @@ async function performDshUpdate(): Promise<{
 		DSH_UPDATE_AVAILABLE = false;
 		DSH_LATEST = newVersion;
 		DSH_VERSION = newVersion;
+		refreshRuntimeMenus();
 		refreshAboutPanel();
 		return { ok: true, version: newVersion };
 	} catch {
@@ -878,6 +879,17 @@ async function createMainWindow(): Promise<BrowserWindow> {
 	return window;
 }
 
+/** Version rows for the tray menu; the app menu carries the same info in About. */
+function trayVersionItems(): MenuItemConstructorOptions[] {
+	const items: MenuItemConstructorOptions[] = [
+		{ label: `${APP_NAME} v${DESKTOP_VERSION}`, enabled: false },
+	];
+	if (DSH_VERSION !== undefined) {
+		items.push({ label: `dsh ${DSH_VERSION}`, enabled: false });
+	}
+	return items;
+}
+
 function trayMenuTemplate(): MenuItemConstructorOptions[] {
 	return [
 		{
@@ -886,6 +898,7 @@ function trayMenuTemplate(): MenuItemConstructorOptions[] {
 				void lifecycle?.showWindow();
 			},
 		},
+		...trayVersionItems(),
 		{ type: "separator" },
 		...disabledPluginsMenuItems(),
 		{
@@ -901,7 +914,7 @@ function trayMenuTemplate(): MenuItemConstructorOptions[] {
 			},
 		},
 		{
-			label: "检查应用更新",
+			label: "检查桌面版更新",
 			click: () => {
 				void checkAppUpdate(true);
 			},
