@@ -8,12 +8,18 @@ DSH Desktop 是一个 Electron 桌面壳，在 [DeepSeek Harness](https://github
 
 ## 特性
 
-- **纯壳架构**：不打包 dsh 及其依赖，安装包约 176MB（Electron + 内置 Node 运行时），dsh 首次启动联网安装。
-- **内置 Node 运行时**：构建时从**国内镜像 `npmmirror`** 下载 Node LTS 并压缩进安装包，首次启动直接解压使用，无需联网下载。
-- **系统 Node 优先**：若系统已装 Node ≥18 则优先复用，不干扰已有环境。
+### 架构
+
+- **纯壳**：安装包只含 Electron 壳 + Node 运行时（约 176MB），不打包 `@deepseek-ai/dsh` 及其 npm 依赖，dsh 首次启动联网安装。
+- **内置 Node 运行时**：构建时从国内镜像下载 Node LTS 并压缩进安装包，首次启动直接解压使用，无需联网下载 Node。
+- **系统 Node 优先**：若系统已装 Node ≥18 则优先复用，内置 Node 作为备用，不干扰已有环境。
 - **国内镜像加速**：dsh 安装走 npm 国内镜像，npm 缓存隔离在应用数据目录。
 - **与官方功能一致**：HMR、全部 dsh 功能原样保留，桌面只加入口。
-- **内置更新检查**：应用菜单与系统托盘支持检查两种更新——dsh 内核通过 npm 在线升级（`@deepseek-ai/dsh`），桌面版本更新引导去 GitHub Release 下载。
+
+### 更新
+
+- **dsh 内核更新**：通过应用菜单「检查 dsh 内核更新」或系统托盘触发，走 npm 在线升级（`@deepseek-ai/dsh`），重启生效。
+- **桌面版本更新**：应用菜单与系统托盘检查后引导至 GitHub Release 下载新版安装包覆盖安装。
 - **多平台**：macOS / Windows / Linux。
 
 ## 安装
