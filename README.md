@@ -2,18 +2,18 @@
 
 > DeepSeek Harness（`dsh web`）的桌面客户端
 
-DSH Desktop 是一个轻量 Electron 桌面壳，在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 官方 `dsh web` 之上提供桌面化体验。
+DSH Desktop 是一个 Electron 桌面壳，在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 官方 `dsh web` 之上提供桌面化体验。
 
 **只加一个桌面入口，不改一行 DSH 核心代码，也不打包 DSH 依赖。**
 
 ## 特性
 
-- **纯壳、轻量**：不打包 dsh 及其依赖，安装包约 176MB；内置 Node 运行时（~49MB），dsh 首次启动联网安装。
-- **内置 Node 运行时**：构建时从**国内镜像 `npmmirror`** 下载 Node LTS 并压缩进安装包，首次启动直接解压使用，无需联网下载 Node。
+- **纯壳架构**：不打包 dsh 及其依赖，安装包约 176MB（Electron + 内置 Node 运行时），dsh 首次启动联网安装。
+- **内置 Node 运行时**：构建时从**国内镜像 `npmmirror`** 下载 Node LTS 并压缩进安装包，首次启动直接解压使用，无需联网下载。
 - **系统 Node 优先**：若系统已装 Node ≥18 则优先复用，不干扰已有环境。
 - **国内镜像加速**：dsh 安装走 npm 国内镜像，npm 缓存隔离在应用数据目录。
-- **与官方完全一致**：HMR、全部 dsh 功能原样保留，桌面只加入口。
-- **内置更新检查**：通过应用菜单「关于 / 检查更新」与系统托盘可手动检查 dsh 内核与桌面版更新，检测到新版本引导去 GitHub Release 下载。
+- **与官方功能一致**：HMR、全部 dsh 功能原样保留，桌面只加入口。
+- **内置更新检查**：应用菜单与系统托盘支持检查两种更新——dsh 内核通过 npm 在线升级（`@deepseek-ai/dsh`），桌面版本更新引导去 GitHub Release 下载。
 - **多平台**：macOS / Windows / Linux。
 
 ## 安装
