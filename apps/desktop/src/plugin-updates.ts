@@ -164,6 +164,13 @@ import { join } from "node:path";
 const PLUGIN_REGISTRY = "https://registry.npmmirror.com";
 const LOOKUP_TIMEOUT_MS = 6000;
 
+/**
+ * Ceiling for one `dsh plugin add`. pnpm has to resolve and fetch the package,
+ * so it is generous, but it must exist: without it a stalled registry leaves the
+ * caller waiting forever with no way out.
+ */
+const PLUGIN_UPDATE_TIMEOUT_MS = 180_000;
+
 /** The web profile directory, honouring $DSH_HOME the way dsh does. */
 export function webProfileDir(env: NodeJS.ProcessEnv = process.env): string {
   const home = env.DSH_HOME?.trim();
@@ -333,14 +340,28 @@ export function applyPluginUpdate(options: {
         "add",
         options.spec,
       ],
-      { cwd: homedir(), env: options.env, stdio: ["ignore", "pipe", "pipe"] },
+      {
+        cwd: homedir(),
+        env: options.env,
+        stdio: ["ignore", "pipe", "pipe"],
+        // 与其余 spawn 一致：Windows 下不弹控制台窗口
+        windowsHide: true,
+      },
     );
     let settled = false;
+    let timer: NodeJS.Timeout | undefined;
     const done = (value: boolean): void => {
       if (settled) return;
       settled = true;
+      if (timer !== undefined) clearTimeout(timer);
       resolve(value);
     };
+    // A stalled registry must not leave the caller hanging forever.
+    timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      done(false);
+    }, PLUGIN_UPDATE_TIMEOUT_MS);
+    timer.unref();
     child.on("error", () => done(false));
     child.on("close", (code) => done(code === 0));
   });
